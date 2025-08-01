@@ -1,0 +1,29 @@
+version: '2'
+
+run:
+  timeout: 3m
+
+formatters:
+  enable:
+    - goimports
+
+linters:
+  enable:
+    - forbidigo
+    - gocritic
+    - lll
+    - reassign
+    - unconvert
+    - gosec
+    - errorlint
+    - godot
+    - revive
+    - testpackage
+    - unused
+
+  settings:
+    godot:
+      scope: all
+    lll:
+      line-length: 120
+      tab-width: 4
