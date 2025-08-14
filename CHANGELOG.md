@@ -10,6 +10,10 @@ Versioning](http://semver.org/spec/v2.0.0.html) except to the first release.
 
 ### Added
 
+- Implemented optional types for builtin go types int*, uint*, float*,
+  bytes, string, bool.
+
+
 ### Changed
 
 ### Fixed
