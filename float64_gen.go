@@ -14,6 +14,8 @@ type Float64 struct {
 	exists bool
 }
 
+var _ commonInterface[float64] = (*Float64)(nil)
+
 // SomeFloat64 creates an optional Float64 with the given float64 value.
 // The returned Float64 will have IsSome() == true and IsZero() == false.
 //

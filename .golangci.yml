@@ -20,10 +20,13 @@ linters:
 
   exclusions:
     rules:
-      - path-except: cmd/generator/*.go
+      - path: cmd/generator/
         linters:
         - forbidigo        # fmt functions are not forbidden here
         - gochecknoglobals # global variables are not forbidden here
+      - path: _test.go
+        linters:
+        - wrapcheck
 
   settings:
     godot:

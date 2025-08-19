@@ -28,6 +28,10 @@ func newDecodeWithCodeError(operationType string, code byte) error {
 	}
 }
 
+func getGenericTypeName[T any]() string {
+	return fmt.Sprintf("Generic[%T]", zero[T]())
+}
+
 func newDecodeError(operationType string, err error) error {
 	if err == nil {
 		return nil
@@ -35,6 +39,18 @@ func newDecodeError(operationType string, err error) error {
 
 	return DecodeError{
 		Type:   operationType,
+		Code:   NoneByte(),
+		Parent: err,
+	}
+}
+
+func newDecodeGenericError[T any](err error) error {
+	if err == nil {
+		return nil
+	}
+
+	return DecodeError{
+		Type:   getGenericTypeName[T](),
 		Code:   NoneByte(),
 		Parent: err,
 	}
@@ -57,4 +73,12 @@ func newEncodeError(operationType string, err error) error {
 	}
 
 	return EncodeError{Type: operationType, Parent: err}
+}
+
+func newEncodeGenericError[T any](err error) error {
+	if err == nil {
+		return nil
+	}
+
+	return EncodeError{Type: getGenericTypeName[T](), Parent: err}
 }

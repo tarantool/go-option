@@ -14,6 +14,8 @@ type Bytes struct {
 	exists bool
 }
 
+var _ commonInterface[[]byte] = (*Bytes)(nil)
+
 // SomeBytes creates an optional Bytes with the given []byte value.
 // The returned Bytes will have IsSome() == true and IsZero() == false.
 //

@@ -14,6 +14,8 @@ type Byte struct {
 	exists bool
 }
 
+var _ commonInterface[byte] = (*Byte)(nil)
+
 // SomeByte creates an optional Byte with the given byte value.
 // The returned Byte will have IsSome() == true and IsZero() == false.
 //

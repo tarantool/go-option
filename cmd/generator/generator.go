@@ -239,6 +239,8 @@ type {{.Name}} struct {
 	exists bool
 }
 
+var _ commonInterface[{{.Type}}] = (*{{.Name}})(nil)
+
 // Some{{.Name}} creates an optional {{.Name}} with the given {{.Type}} value.
 // The returned {{.Name}} will have IsSome() == true and IsZero() == false.
 //
