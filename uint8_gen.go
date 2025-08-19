@@ -14,6 +14,8 @@ type Uint8 struct {
 	exists bool
 }
 
+var _ commonInterface[uint8] = (*Uint8)(nil)
+
 // SomeUint8 creates an optional Uint8 with the given uint8 value.
 // The returned Uint8 will have IsSome() == true and IsZero() == false.
 //

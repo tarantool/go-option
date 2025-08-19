@@ -14,6 +14,8 @@ type Int struct {
 	exists bool
 }
 
+var _ commonInterface[int] = (*Int)(nil)
+
 // SomeInt creates an optional Int with the given int value.
 // The returned Int will have IsSome() == true and IsZero() == false.
 //

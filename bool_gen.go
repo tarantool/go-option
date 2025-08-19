@@ -14,6 +14,8 @@ type Bool struct {
 	exists bool
 }
 
+var _ commonInterface[bool] = (*Bool)(nil)
+
 // SomeBool creates an optional Bool with the given bool value.
 // The returned Bool will have IsSome() == true and IsZero() == false.
 //

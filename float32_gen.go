@@ -14,6 +14,8 @@ type Float32 struct {
 	exists bool
 }
 
+var _ commonInterface[float32] = (*Float32)(nil)
+
 // SomeFloat32 creates an optional Float32 with the given float32 value.
 // The returned Float32 will have IsSome() == true and IsZero() == false.
 //

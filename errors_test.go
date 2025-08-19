@@ -1,4 +1,5 @@
 package option //nolint:testpackage
+
 // this is unit test, that checks internal logic of error constructing.
 
 import (
@@ -13,7 +14,7 @@ var (
 	errTest = errors.New("some error")
 )
 
-func TestDecodeError_Error(t *testing.T) {
+func TestEncodeError_Error(t *testing.T) {
 	t.Parallel()
 
 	t.Run("newEncodeError with error", func(t *testing.T) {
@@ -32,9 +33,26 @@ func TestDecodeError_Error(t *testing.T) {
 
 		require.NoError(t, a)
 	})
+
+	t.Run("newEncoderGenericError", func(t *testing.T) {
+		t.Parallel()
+
+		a := newEncodeGenericError[int](errTest)
+
+		require.Error(t, a)
+		assert.Equal(t, "failed to encode Generic[int]: some error", a.Error())
+	})
+
+	t.Run("newEncodeGenericError without error", func(t *testing.T) {
+		t.Parallel()
+
+		a := newEncodeGenericError[int](nil)
+
+		require.NoError(t, a)
+	})
 }
 
-func TestEncodeError_Error(t *testing.T) {
+func TestDecodeError_Error(t *testing.T) {
 	t.Parallel()
 
 	t.Run("newDecodeError with error", func(t *testing.T) {
@@ -61,5 +79,22 @@ func TestEncodeError_Error(t *testing.T) {
 
 		require.Error(t, a)
 		assert.Equal(t, "failed to decode Byte, invalid code: 1", a.Error())
+	})
+
+	t.Run("newDecodeGenericError", func(t *testing.T) {
+		t.Parallel()
+
+		a := newDecodeGenericError[int](errTest)
+
+		require.Error(t, a)
+		assert.Equal(t, "failed to decode Generic[int]: some error", a.Error())
+	})
+
+	t.Run("newDecodeGenericError without error", func(t *testing.T) {
+		t.Parallel()
+
+		a := newDecodeGenericError[int](nil)
+
+		require.NoError(t, a)
 	})
 }

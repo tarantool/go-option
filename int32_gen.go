@@ -14,6 +14,8 @@ type Int32 struct {
 	exists bool
 }
 
+var _ commonInterface[int32] = (*Int32)(nil)
+
 // SomeInt32 creates an optional Int32 with the given int32 value.
 // The returned Int32 will have IsSome() == true and IsZero() == false.
 //

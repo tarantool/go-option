@@ -14,6 +14,8 @@ type Uint32 struct {
 	exists bool
 }
 
+var _ commonInterface[uint32] = (*Uint32)(nil)
+
 // SomeUint32 creates an optional Uint32 with the given uint32 value.
 // The returned Uint32 will have IsSome() == true and IsZero() == false.
 //

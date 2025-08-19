@@ -14,6 +14,8 @@ type Int16 struct {
 	exists bool
 }
 
+var _ commonInterface[int16] = (*Int16)(nil)
+
 // SomeInt16 creates an optional Int16 with the given int16 value.
 // The returned Int16 will have IsSome() == true and IsZero() == false.
 //

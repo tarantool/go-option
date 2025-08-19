@@ -14,6 +14,8 @@ type Uint struct {
 	exists bool
 }
 
+var _ commonInterface[uint] = (*Uint)(nil)
+
 // SomeUint creates an optional Uint with the given uint value.
 // The returned Uint will have IsSome() == true and IsZero() == false.
 //

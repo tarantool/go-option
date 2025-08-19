@@ -14,6 +14,8 @@ type Uint64 struct {
 	exists bool
 }
 
+var _ commonInterface[uint64] = (*Uint64)(nil)
+
 // SomeUint64 creates an optional Uint64 with the given uint64 value.
 // The returned Uint64 will have IsSome() == true and IsZero() == false.
 //

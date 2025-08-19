@@ -14,6 +14,8 @@ type String struct {
 	exists bool
 }
 
+var _ commonInterface[string] = (*String)(nil)
+
 // SomeString creates an optional String with the given string value.
 // The returned String will have IsSome() == true and IsZero() == false.
 //
