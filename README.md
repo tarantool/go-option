@@ -10,9 +10,9 @@
 
 [godoc-badge]: https://pkg.go.dev/badge/github.com/tarantool/go-option.svg
 [godoc-url]: https://pkg.go.dev/github.com/tarantool/go-option
-[actions-badge]: https://github.com/tarantool/go-option/actions/workflows/testing.yml/badge.svg
-[actions-url]: https://github.com/tarantool/go-option/actions/workflows/testing.yml
-[coverage-badge]: https://coveralls.io/repos/github/tarantool/go-option/badge.svg?branch=master
+[actions-badge]: https://github.com/tarantool/go-option/actions/workflows/testing.yaml/badge.svg
+[actions-url]: https://github.com/tarantool/go-option/actions/workflows/testing.yaml
+[coverage-badge]: https://img.shields.io/coverallsCoverage/github/tarantool/go-option
 [coverage-url]: https://coveralls.io/github/tarantool/go-option?branch=master
 [telegram-badge]: https://img.shields.io/badge/Telegram-join%20chat-blue.svg
 [telegram-en-url]: http://telegram.me/tarantool
