@@ -10,11 +10,17 @@ Versioning](http://semver.org/spec/v2.0.0.html) except to the first release.
 
 ### Added
 
-- Implemented optional types for builtin go types int*, uint*, float*,
-  bytes, string, bool.
-
-
 ### Changed
 
 ### Fixed
 
+## [v0.1.0] - 2025-08-20
+
+The release introduces base option types: wrappers for all types supported by
+the msgpack/v5 library and a generic type.
+
+### Added
+
+- Implemented optional types for builtin go types int*, uint*, float*,
+  bytes, string, bool.
+- Implemented generic optional type for any go type.
