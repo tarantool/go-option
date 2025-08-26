@@ -19,14 +19,19 @@ linters:
     - ireturn  # ireturn is disabled, since it's not needed.
 
   exclusions:
+    generated: lax
     rules:
       - path: cmd/generator/
         linters:
-        - forbidigo        # fmt functions are not forbidden here
-        - gochecknoglobals # global variables are not forbidden here
+          - forbidigo        # fmt functions are not forbidden here.
+          - gochecknoglobals # global variables are not forbidden here.
+      - path: cmd/gentypes/
+        linters:
+          - forbidigo        # fmt functions are not forbidden here.
+          - gochecknoglobals # global variables are not forbidden here.
       - path: _test.go
         linters:
-        - wrapcheck
+          - wrapcheck
 
   settings:
     godot:
@@ -48,8 +53,10 @@ linters:
             - "!$test"
           allow:
             - $gostd
-            - "github.com/vmihailenco/msgpack/v5"
             - "golang.org/x/text"
+            - "golang.org/x/tools"
+            - "github.com/vmihailenco/msgpack/v5"
+            - "github.com/tarantool/go-option"
         test:
           files:
             - "$test"
