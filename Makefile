@@ -33,3 +33,11 @@ coveralls-deps:
 	@echo "Installing coveralls"
 	@go get github.com/mattn/goveralls
 	@go install github.com/mattn/goveralls
+
+.PHONY: godoc_run
+godoc_run:
+	godoc -http=:6060
+
+.PHONY: godoc_open
+godoc_open:
+	xdg-open http://localhost:6060/pkg/$(shell go list -f "{{.ImportPath}}")
