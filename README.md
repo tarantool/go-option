@@ -10,7 +10,115 @@
 
 # go-option: library to work with optional types
 
-## Pre-generated basic optional types
+Package `option` implements effective and useful instruments to work
+with optional types in Go. It eliminates code doubling and provides
+high performance due to:
+  - no memory allocations
+  - serialization without reflection (at least for pre-generated types)
+  - support for basic and custom types
+
+## Table of contents
+
+* [Installation](#installation)
+* [Documentation](#documentation)
+* [Quick start](#quick-start)
+* [Gentype Utility](#gentype-utility)
+* [Development](#development)
+* [License](#license)
+
+## Installation
+
+```shell
+go install github.com/tarantool/go-option@latest
+```
+
+## Quick start
+
+```Go
+package main
+
+import (
+	"bytes"
+	"fmt"
+
+	"github.com/tarantool/go-option"
+	msgpack "github.com/vmihailenco/msgpack/v5"
+)
+
+func main() {
+	var buf bytes.Buffer
+
+	enc := msgpack.NewEncoder(&buf)
+	dec := msgpack.NewDecoder(&buf)
+
+	someUint := option.SomeUint(12)
+	err := someUint.EncodeMsgpack(enc)
+	if err != nil {
+		panic("encode fail")
+	}
+
+	var unmarshaled option.Uint
+	err = unmarshaled.DecodeMsgpack(dec)
+	if err != nil {
+		panic(fmt.Errorf("decode fail: %s", err))
+	}
+
+	if !unmarshaled.IsSome() {
+		panic("IsSome error")
+	}
+
+	if unmarshaled.Unwrap() != 12 {
+		panic("Unwrap error")
+	}
+}
+```
+
+## Usage with go-tarantool
+
+It may be necessary to use an optional type in a structure. For example,
+to distinguish between a nil value and a missing one.
+
+```Go
+package main
+
+import (
+  "github.com/tarantool/go-option"
+  tarantool "github.com/tarantool/go-tarantool/v2"
+)
+
+type User struct {
+	// may be used in conjunciton with 'msgpack:",omitempty"' directive to skip fields
+    _msgpack struct{} `msgpack:",asArray"` //nolint: structcheck,unused
+    Name     string
+    Phone    option.String
+}
+
+func main() {
+    var conn *tarantool.Doer
+    // Initialize tarantool connection
+
+    // Imagine you get a slice of users from Tarantool.
+    users := []User{
+        {
+            Name: "Nosipho Nnenne",
+            Phone: option.SomeString("+15056463408"),
+        },
+        {
+            Name:  "Maryamu Efe",
+            Phone: option.NoneString(),
+        },
+        {
+            Name: "Venera Okafor",
+        },
+    }
+
+    for id, user := range users {
+        conn.Do(
+            tarantool.NewInsertRequest("users").Tuple(user),
+        )
+    }
+}
+```
 
 ## Gentype Utility
 
@@ -21,7 +129,7 @@ serialization support.
 
 Gentype generates wrapper types for various Go primitives and
 custom types that implement optional (some/none) semantics with
-full MessagePack serialization capabilities. These generated types 
+full MessagePack serialization capabilities. These generated types
 are useful for representing values that may or may not be present,
 while ensuring proper encoding and decoding when using MessagePack.
 
@@ -30,10 +138,10 @@ while ensuring proper encoding and decoding when using MessagePack.
 - Generates optional types for built-in types (bool, int, float, string, etc.)
 - Supports custom types with MessagePack extension serialization
 - Provides common optional type operations:
-  - `SomeXxx(value)` - Create an optional with a value
-  - `NoneXxx()` - Create an empty optional
-  - `Unwrap()`, `UnwrapOr()`, `UnwrapOrElse()` - Value extraction
-  - `IsSome()`, `IsNone()` - Presence checking
+    - `SomeXxx(value)` - Create an optional with a value
+    - `NoneXxx()` - Create an empty optional
+    - `Unwrap()`, `UnwrapOr()`, `UnwrapOrElse()` - Value extraction
+    - `IsSome()`, `IsNone()` - Presence checking
 - Full MessagePack `CustomEncoder` and `CustomDecoder` implementation
 - Type-safe operations
 
@@ -66,10 +174,10 @@ Or you can use it to generate file from go:
 
 Flags:
 
- • `-package`: Path to the Go package containing types to wrap (default: `"."`)
- • `-ext-code`: MessagePack extension code to use for custom types (must be between
-   -128 and 127, no default value)
- • `-verbose`: Enable verbose output (default: `false`)
+• `-package`: Path to the Go package containing types to wrap (default: `"."`)
+• `-ext-code`: MessagePack extension code to use for custom types (must be between
+-128 and 127, no default value)
+• `-verbose`: Enable verbose output (default: `false`)
 
 #### Using Generated Types
 
@@ -93,40 +201,28 @@ value := opt.UnwrapOr("default")
 err := opt.EncodeMsgpack(encoder)
 ```
 
-[godoc-badge]: https://pkg.go.dev/badge/github.com/tarantool/go-option.svg
-[godoc-url]: https://pkg.go.dev/github.com/tarantool/go-option
-[actions-badge]: https://github.com/tarantool/go-option/actions/workflows/testing.yaml/badge.svg
-[actions-url]: https://github.com/tarantool/go-option/actions/workflows/testing.yaml
-[coverage-badge]: https://img.shields.io/coverallsCoverage/github/tarantool/go-option
-[coverage-url]: https://coveralls.io/github/tarantool/go-option?branch=master
-[telegram-badge]: https://img.shields.io/badge/Telegram-join%20chat-blue.svg
-[telegram-en-url]: http://telegram.me/tarantool
-[telegram-ru-url]: http://telegram.me/tarantoolru
+## Development
 
-# option
-
-Package `option` implements effective and useful instruments to work
-with optional types in Go. It eliminates code doubling and provides
-high performance due to:
-  - no memory allocations
-  - serialization without reflection (at least for pre-generated types)
-  - support for basic and custom types
-
-## Table of contents
-
-* [Installation](#installation)
-* [Documentation](#documentation)
-* [Quick start](#quick-start)
-* [Run tests](#run-tests)
-* [Development](#development)
-
-## Installation
+You could use our Makefile targets:
 
 ```shell
-go install github.com/tarantool/go-option@latest
+make codespell
+make test
+make testrace
+make coveralls-deps
+make coveralls
+make coverage
 ```
 
-## Documentation
+### Run tests
+
+To run default set of tests:
+
+```shell
+go test ./... -count=1
+```
+
+### Documentation
 
 You could run the `godoc` server on `localhost:6060` with the command:
 
@@ -141,67 +237,16 @@ And open the generated documentation in another terminal or use the
 make godoc_open
 ```
 
-## Quick start
+## License
 
-```Go
-package main
+BSD 2-Clause License
 
-import (
-	"bytes"
-	"fmt"
-
-	"github.com/tarantool/go-option"
-	msgpack "github.com/vmihailenco/msgpack/v5"
-)
-
-func main() {
-
-	var buf bytes.Buffer
-
-	enc := msgpack.NewEncoder(&buf)
-	dec := msgpack.NewDecoder(&buf)
-
-	someUint := option.SomeUint(12)
-	err := someUint.EncodeMsgpack(enc)
-	if err != nil {
-		panic("encode fail")
-	}
-
-	var unmarshaled option.Uint
-	err = unmarshaled.DecodeMsgpack(dec)
-	if err != nil {
-		panic(fmt.Errorf("decode fail: %s", err))
-	}
-
-	if !unmarshaled.IsSome() {
-		panic("IsSome error")
-	}
-
-	if unmarshaled.Unwrap() != 12 {
-		panic("Unwrap error")
-	}
-}
-
-```
-
-
-## Run tests
-
-To run default set of tests:
-
-```shell
-go test ./... -count=1
-```
-
-## Development
-
-You could use our Makefile targets:
-
-```shell
-make codespell
-make test
-make testrace
-make coveralls-deps
-make coveralls
-make coverage
-```
+[godoc-badge]: https://pkg.go.dev/badge/github.com/tarantool/go-option.svg
+[godoc-url]: https://pkg.go.dev/github.com/tarantool/go-option
+[actions-badge]: https://github.com/tarantool/go-option/actions/workflows/testing.yaml/badge.svg
+[actions-url]: https://github.com/tarantool/go-option/actions/workflows/testing.yaml
+[coverage-badge]: https://img.shields.io/coverallsCoverage/github/tarantool/go-option
+[coverage-url]: https://coveralls.io/github/tarantool/go-option?branch=master
+[telegram-badge]: https://img.shields.io/badge/Telegram-join%20chat-blue.svg
+[telegram-en-url]: http://telegram.me/tarantool
+[telegram-ru-url]: http://telegram.me/tarantoolru

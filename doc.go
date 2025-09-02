@@ -2,7 +2,7 @@
 // A Generic[T] can either contain a value of type T (Some) or be empty (None).
 //
 // This is useful for:
-// - Clearly representing nullable fields in structs.
-// - Avoiding nil pointer dereferences.
-// - Providing explicit intent about optional values.
+//   - Clearly representing nullable fields in structs.
+//   - Avoiding nil pointer dereferences.
+//   - Providing explicit intent about optional values.
 package option
