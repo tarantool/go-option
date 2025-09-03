@@ -178,10 +178,65 @@ Or you can use it to generate file from go:
 
 Flags:
 
-• `-package`: Path to the Go package containing types to wrap (default: `"."`)
-• `-ext-code`: MessagePack extension code to use for custom types (must be between
--128 and 127, no default value)
-• `-verbose`: Enable verbose output (default: `false`)
+ * `-package`: Path to the Go package containing types to wrap (default: `"."`)
+ * `-ext-code`: MessagePack extension code to use for custom types (must be between
+   -128 and 127, no default value)
+ * `-verbose`: Enable verbose output (default: `false`)
+ * `-force`: Ignore absence of marshal/unmarshal methods on type (default: `false`).
+   Helpful for types from third-party modules.
+ * `-imports`: Add imports to generated file (default is empty).
+   Helpful for types from third-party modules.
+ * `-marshal-func`: func that should do marshaling (default is `MarshalMsgpack` method).
+   Helpful for types from third-party modules.
+   Should be func of type `func(v T) ([]byte, error)` and should
+   be located in the same dir or should be imported.
+ * `-unmarshal-func`: func that should do unmarshalling (default is `UnmarshalMsgpack` method).
+   Helpful for types from third-party modules.
+   Should be func of type `func(v *T, data []byte) error` and should
+   be located in the same dir or should be imported.
+
+#### Generating Optional Types for Third-Party Modules
+
+Sometimes you need to generate an optional type for a type from a third-party module,
+and you can't add `MarshalMsgpack`/`UnmarshalMsgpack` methods to it.
+In this case, you can use the `-force`, `-imports`, `-marshal-func`, and `-unmarshal-func` flags.
+
+For example, to generate an optional type for `github.com/google/uuid.UUID`:
+
+1.  Create a file with marshal and unmarshal functions for the third-party type.
+    For example, `uuid.go`:
+
+    ```go
+    package main
+
+    import (
+        "errors"
+
+        "github.com/google/uuid"
+    )
+
+    func encodeUUID(uuid uuid.UUID) ([]byte, error) {
+        return uuid[:], nil
+    }
+
+    var (
+        ErrInvalidLength = errors.New("invalid length")
+    )
+
+    func decodeUUID(uuid *uuid.UUID, data []byte) error {
+        if len(data) != len(uuid) {
+            return ErrInvalidLength
+        }
+        copy(uuid[:], data)
+        return nil
+    }
+    ```
+
+2.  Use the following `go:generate` command:
+
+    ```go
+    //go:generate go run github.com/tarantool/go-option/cmd/gentypes@latest -package . -imports "github.com/google/uuid" -type UUID -marshal-func "encodeUUID" -unmarshal-func "decodeUUID" -force -ext-code 100
+    ```
 
 ### Using Generated Types
 
