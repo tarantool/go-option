@@ -24,9 +24,13 @@ const (
 )
 
 var (
-	packagePath string
-	extCode     int
-	verbose     bool
+	packagePath         string
+	extCode             int
+	verbose             bool
+	force               bool
+	imports             stringListFlag
+	customMarshalFunc   string
+	customUnmarshalFunc string
 )
 
 func logfuncf(format string, args ...interface{}) {
@@ -98,6 +102,26 @@ func printFile(prefix string, data []byte) {
 	}
 }
 
+func isExternalDep(name string) bool {
+	return strings.Contains(name, ".")
+}
+
+const (
+	maxNameParts = 2
+)
+
+func constructFileName(name string) string {
+	parts := strings.SplitN(name, ".", maxNameParts)
+	switch {
+	case len(parts) == 1:
+		name = parts[0]
+	case len(parts) == maxNameParts:
+		name = parts[1]
+	}
+
+	return strings.ToLower(name) + "_gen.go"
+}
+
 func main() { //nolint:funlen
 	generator.InitializeTemplates()
 
@@ -106,7 +130,10 @@ func main() { //nolint:funlen
 	flag.StringVar(&packagePath, "package", "./", "input and output path")
 	flag.IntVar(&extCode, "ext-code", undefinedExtCode, "extension code")
 	flag.BoolVar(&verbose, "verbose", false, "print verbose output")
-
+	flag.BoolVar(&force, "force", false, "generate files even if methods do not exist")
+	flag.Var(&imports, "imports", "imports to add to generated files")
+	flag.StringVar(&customMarshalFunc, "marshal-func", "", "custom marshal function")
+	flag.StringVar(&customUnmarshalFunc, "unmarshal-func", "", "custom unmarshal function")
 	flag.Parse()
 
 	switch {
@@ -164,19 +191,32 @@ func main() { //nolint:funlen
 
 	// Check for existence of all types that we want to generate.
 	typeSpecDef, ok := analyzer.TypeSpecEntryByName(typeName)
-	if !ok {
+	switch {
+	case isExternalDep(typeName):
+		fmt.Println("typename contains dot, probably third party type:", typeName)
+	case !ok:
 		fmt.Println("failed to find struct:", typeName)
 		os.Exit(1)
 	}
 
-	fmt.Println("generating optional for:", typeName)
+	fmt.Println("generating optional:", typeName)
 
-	if !typeSpecDef.HasMethod("MarshalMsgpack") || !typeSpecDef.HasMethod("UnmarshalMsgpack") {
+	switch {
+	case force || isExternalDep(typeName):
+		// Skipping check for MarshalMsgpack and UnmarshalMsgpack methods.
+	case !typeSpecDef.HasMethod("MarshalMsgpack") || !typeSpecDef.HasMethod("UnmarshalMsgpack"):
 		fmt.Println("failed to find MarshalMsgpack or UnmarshalMsgpack method for struct:", typeName)
 		os.Exit(1)
 	}
 
-	generatedGoSources, err := generator.GenerateByType(typeName, extCode, analyzer.PackageName())
+	generatedGoSources, err := generator.GenerateByType(generator.GenerateOptions{
+		TypeName:            typeName,
+		ExtCode:             extCode,
+		PackageName:         pkg.Name,
+		Imports:             imports,
+		CustomMarshalFunc:   customMarshalFunc,
+		CustomUnmarshalFunc: customUnmarshalFunc,
+	})
 	if err != nil {
 		fmt.Println("failed to generate optional types:")
 		fmt.Println("    ", err)
@@ -191,7 +231,7 @@ func main() { //nolint:funlen
 	}
 
 	err = os.WriteFile(
-		filepath.Join(packagePath, strings.ToLower(typeName)+"_gen.go"),
+		filepath.Join(packagePath, constructFileName(typeName)),
 		formattedGoSource,
 		defaultGoPermissions,
 	)

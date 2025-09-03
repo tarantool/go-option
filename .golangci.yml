@@ -57,6 +57,7 @@ linters:
             - "golang.org/x/tools"
             - "github.com/vmihailenco/msgpack/v5"
             - "github.com/tarantool/go-option"
+            - "github.com/google/uuid"
         test:
           files:
             - "$test"

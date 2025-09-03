@@ -3,6 +3,7 @@ module github.com/tarantool/go-option
 go 1.23.0
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.11.1
 	github.com/vmihailenco/msgpack/v5 v5.4.1
 	golang.org/x/text v0.28.0
