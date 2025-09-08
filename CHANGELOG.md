@@ -10,11 +10,19 @@ Versioning](http://semver.org/spec/v2.0.0.html) except to the first release.
 
 ### Added
 
-- gentypes: Add support for third-party types.
-
 ### Changed
 
 ### Fixed
+
+## [v1.0.0] - 2025-09-09
+
+This release introduces code generator `gentypes`.
+
+### Added
+
+- **Support for third-party types**: A new code generator `gentypes` is
+  introduced. It allows generating optional types for any user-defined or
+  third-party types. The generator can be invoked using `go:generate`.
 
 ## [v0.1.0] - 2025-08-20
 
