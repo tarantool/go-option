@@ -281,6 +281,76 @@ To run default set of tests directly:
 go test ./... -count=1
 ```
 
+## Benchmarking
+
+Along with the approach supplied with `go-option` library pointer-based and slice-based approaches were benchmarked as well.
+
+#### Init + Get (empty value)
+
+```
+# int
+BenchmarkNoneInt/Typed-8        	560566400	 2.200 ns/op	 0 B/op	  0 allocs/op
+BenchmarkNoneInt/Generic-8      	543332625	 2.193 ns/op	 0 B/op	  0 allocs/op
+BenchmarkNoneInt/GenericPtr-8   	487631254	 2.474 ns/op	 0 B/op	  0 allocs/op
+BenchmarkNoneInt/GenericSlice-8 	441513422	 2.608 ns/op	 0 B/op	  0 allocs/op
+# string
+BenchmarkNoneString/Typed-8        	170894025	 6.545 ns/op	 0 B/op	 0 allocs/op
+BenchmarkNoneString/Generic-8      	185572758	 6.451 ns/op	 0 B/op	 0 allocs/op
+BenchmarkNoneString/GenericPtr-8   	159143874	 7.459 ns/op	 0 B/op	 0 allocs/op
+BenchmarkNoneString/GenericSlice-8 	173419598	 6.708 ns/op	 0 B/op	 0 allocs/op
+# struct
+BenchmarkNoneStruct/Typed-8        	384845384	 3.107 ns/op	 0 B/op	  0 allocs/op
+BenchmarkNoneStruct/Generic-8      	415633797	 2.884 ns/op	 0 B/op	  0 allocs/op
+BenchmarkNoneStruct/GenericPtr-8   	331620082	 3.580 ns/op	 0 B/op	  0 allocs/op
+BenchmarkNoneStruct/GenericSlice-8 	387593746	 3.115 ns/op	 0 B/op	  0 allocs/op
+```
+
+#### Init + Get (non-empty value)
+
+```
+# int
+BenchmarkSomeInt/Typed-8        	499550200	 2.231 ns/op	 0 B/op	  0 allocs/op
+BenchmarkSomeInt/Generic-8      	321369986	 3.491 ns/op	 0 B/op	  0 allocs/op
+BenchmarkSomeInt/GenericPtr-8   	 64221356	 16.03 ns/op	 8 B/op	  1 allocs/op
+BenchmarkSomeInt/GenericSlice-8 	 71858188	 16.53 ns/op	 8 B/op	  1 allocs/op
+# string
+BenchmarkSomeString/Typed-8        	192472155	 5.840 ns/op	  0 B/op	 0 allocs/op
+BenchmarkSomeString/Generic-8      	197161162	 6.471 ns/op	  0 B/op	 0 allocs/op
+BenchmarkSomeString/GenericPtr-8   	 16207524	 98.67 ns/op	 16 B/op	 1 allocs/op
+BenchmarkSomeString/GenericSlice-8 	 12426998	 100.4 ns/op	 16 B/op	 1 allocs/op
+# struct
+BenchmarkSomeStruct/Typed-8          	358631294	 3.407 ns/op	  0 B/op	   0 allocs/op
+BenchmarkSomeStruct/Generic-8        	241312274	 4.978 ns/op	  0 B/op	   0 allocs/op
+BenchmarkSomeStruct/GenericPtr-8     	 32534370	 33.28 ns/op	 24 B/op	 1 allocs/op
+BenchmarkSomeStruct/GenericSlice-8   	 34119435	 33.08 ns/op	 24 B/op	 1 allocs/op
+```
+
+At this point we can see already that the alternatives (based on pointer and slice) require allocations while the approach implemented in `go-option` doesn't.
+
+Now let's check encoding and decoding.
+
+## Encode + Decode
+
+```
+# int
+BenchmarkEncodeDecodeInt/Typed-8        	46089481	 22.66 ns/op	  0 B/op	 0 allocs/op
+BenchmarkEncodeDecodeInt/Generic-8      	10070619	 119.6 ns/op	 32 B/op	 2 allocs/op
+BenchmarkEncodeDecodeInt/GenericPtr-8   	20202076	 58.14 ns/op	 16 B/op	 2 allocs/op
+BenchmarkEncodeDecodeInt/GenericSlice-8 	17400481	 66.24 ns/op	 24 B/op	 3 allocs/op
+# string
+BenchmarkEncodeDecodeString/Typed-8        	 6053182	 191.4 ns/op	  8 B/op	 1 allocs/op
+BenchmarkEncodeDecodeString/Generic-8      	 1891269	 668.3 ns/op	 56 B/op	 3 allocs/op
+BenchmarkEncodeDecodeString/GenericPtr-8   	 1645518	 659.2 ns/op	 56 B/op	 4 allocs/op
+BenchmarkEncodeDecodeString/GenericSlice-8 	 1464177	 775.4 ns/op	 72 B/op	 5 allocs/op
+# struct
+BenchmarkEncodeDecodeStruct/Typed-8        	12816339	 90.85 ns/op	  3 B/op	 1 allocs/op
+BenchmarkEncodeDecodeStruct/Generic-8      	 2304001	 532.5 ns/op	 67 B/op	 3 allocs/op
+BenchmarkEncodeDecodeStruct/GenericPtr-8   	 2071520	 570.2 ns/op	 75 B/op	 4 allocs/op
+BenchmarkEncodeDecodeStruct/GenericSlice-8 	 2007445	 587.4 ns/op	 99 B/op	 5 allocs/op
+```
+
+As it can be seen generic implementation ~3-4 times slower than the typed one. Thus it is recommended to use pre-generated optionals for basic types supplied with `go-option` (`option.Int`, `option.String` etc.).
+
 ## License
 
 BSD 2-Clause License
