@@ -33,7 +33,7 @@ var (
 	customUnmarshalFunc string
 )
 
-func logfuncf(format string, args ...interface{}) {
+func logfuncf(format string, args ...any) {
 	if verbose {
 		fmt.Printf("> "+format+"\n", args...)
 	}

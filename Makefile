@@ -17,6 +17,11 @@ testrace:
 	@echo "Running tests with race flag"
 	@go test ./... -count=100 -race
 
+.PHONY: bench
+bench:
+	@echo "Running benchmarks"
+	@go test ./... -count=1 -bench=. -benchmem
+
 .PHONY: coverage
 coverage:
 	@echo "Running tests with coveralls"
