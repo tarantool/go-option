@@ -18,13 +18,6 @@ var _ commonInterface[uint8] = (*Uint8)(nil)
 
 // SomeUint8 creates an optional Uint8 with the given uint8 value.
 // The returned Uint8 will have IsSome() == true and IsZero() == false.
-//
-// Example:
-//
-//	o := SomeUint8(12)
-//	if o.IsSome() {
-//	    v := o.Unwrap() // v == 12
-//	}
 func SomeUint8(value uint8) Uint8 {
 	return Uint8{
 		value:  value,
@@ -34,13 +27,6 @@ func SomeUint8(value uint8) Uint8 {
 
 // NoneUint8 creates an empty optional Uint8 value.
 // The returned Uint8 will have IsSome() == false and IsZero() == true.
-//
-// Example:
-//
-//	o := NoneUint8()
-//	if o.IsZero() {
-//	    fmt.Println("value is absent")
-//	}
 func NoneUint8() Uint8 {
 	return Uint8{
 		exists: false,
@@ -106,11 +92,6 @@ func (o Uint8) Unwrap() uint8 {
 
 // UnwrapOr returns the stored value if present.
 // Otherwise, returns the provided default value.
-//
-// Example:
-//
-//	o := NoneUint8()
-//	v := o.UnwrapOr(someDefaultUint8)
 func (o Uint8) UnwrapOr(defaultValue uint8) uint8 {
 	if o.exists {
 		return o.value
@@ -122,11 +103,6 @@ func (o Uint8) UnwrapOr(defaultValue uint8) uint8 {
 // UnwrapOrElse returns the stored value if present.
 // Otherwise, calls the provided function and returns its result.
 // Useful when the default value requires computation or side effects.
-//
-// Example:
-//
-//	o := NoneUint8()
-//	v := o.UnwrapOrElse(func() uint8 { return computeDefault() })
 func (o Uint8) UnwrapOrElse(defaultValue func() uint8) uint8 {
 	if o.exists {
 		return o.value

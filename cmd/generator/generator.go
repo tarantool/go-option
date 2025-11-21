@@ -1,3 +1,4 @@
+//nolint:exhaustruct
 package main
 
 import (
@@ -30,8 +31,11 @@ type generatorDef struct {
 	EncoderFunc string
 	CheckerFunc string
 
-	TestingValue           string
-	UnexpectedTestingValue string
+	TestingValue                 string
+	TestingValueOutput           string
+	UnexpectedTestingValue       string
+	UnexpectedTestingValueOutput string
+	ZeroTestingValueOutput       string
 }
 
 func structToMap(def generatorDef) map[string]any {
@@ -44,15 +48,32 @@ func structToMap(def generatorDef) map[string]any {
 		"EncoderFunc": def.EncoderFunc,
 		"CheckerFunc": def.CheckerFunc,
 
-		"TestingValue":           def.TestingValue,
-		"UnexpectedTestingValue": def.UnexpectedTestingValue,
+		"TestingValue":                 def.TestingValue,
+		"TestingValueOutput":           def.TestingValue,
+		"UnexpectedTestingValue":       def.UnexpectedTestingValue,
+		"UnexpectedTestingValueOutput": def.UnexpectedTestingValue,
+		"ZeroTestingValueOutput":       def.ZeroTestingValueOutput,
 	}
 
 	if def.Type != "" {
 		out["Type"] = def.Type
 	}
 
+	if def.TestingValueOutput != "" {
+		out["TestingValueOutput"] = def.TestingValueOutput
+	}
+
+	if def.UnexpectedTestingValueOutput != "" {
+		out["UnexpectedTestingValueOutput"] = def.UnexpectedTestingValueOutput
+	}
+
 	return out
+}
+
+func zeroOutput[T any]() string {
+	var zero T
+
+	return fmt.Sprint(zero)
 }
 
 var defaultTypes = []generatorDef{
@@ -65,6 +86,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "12",
 		UnexpectedTestingValue: "13",
+		ZeroTestingValueOutput: zeroOutput[byte](),
 	},
 	{
 		Name:        "int",
@@ -75,6 +97,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "12",
 		UnexpectedTestingValue: "13",
+		ZeroTestingValueOutput: zeroOutput[int](),
 	},
 	{
 		Name:        "int8",
@@ -85,6 +108,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "12",
 		UnexpectedTestingValue: "13",
+		ZeroTestingValueOutput: zeroOutput[int8](),
 	},
 	{
 		Name:        "int16",
@@ -95,6 +119,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "12",
 		UnexpectedTestingValue: "13",
+		ZeroTestingValueOutput: zeroOutput[int16](),
 	},
 	{
 		Name:        "int32",
@@ -105,6 +130,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "12",
 		UnexpectedTestingValue: "13",
+		ZeroTestingValueOutput: zeroOutput[int32](),
 	},
 	{
 		Name:        "int64",
@@ -115,6 +141,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "12",
 		UnexpectedTestingValue: "13",
+		ZeroTestingValueOutput: zeroOutput[int64](),
 	},
 	{
 		Name:        "uint",
@@ -125,6 +152,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "12",
 		UnexpectedTestingValue: "13",
+		ZeroTestingValueOutput: zeroOutput[uint](),
 	},
 	{
 		Name:        "uint8",
@@ -135,6 +163,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "12",
 		UnexpectedTestingValue: "13",
+		ZeroTestingValueOutput: zeroOutput[uint8](),
 	},
 	{
 		Name:        "uint16",
@@ -145,6 +174,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "12",
 		UnexpectedTestingValue: "13",
+		ZeroTestingValueOutput: zeroOutput[uint16](),
 	},
 	{
 		Name:        "uint32",
@@ -155,6 +185,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "12",
 		UnexpectedTestingValue: "13",
+		ZeroTestingValueOutput: zeroOutput[uint32](),
 	},
 	{
 		Name:        "uint64",
@@ -165,6 +196,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "12",
 		UnexpectedTestingValue: "13",
+		ZeroTestingValueOutput: zeroOutput[uint64](),
 	},
 	{
 		Name:        "float32",
@@ -175,6 +207,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "12",
 		UnexpectedTestingValue: "13",
+		ZeroTestingValueOutput: zeroOutput[float32](),
 	},
 	{
 		Name:        "float64",
@@ -185,6 +218,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "12",
 		UnexpectedTestingValue: "13",
+		ZeroTestingValueOutput: zeroOutput[float64](),
 	},
 	{
 		Name:        "string",
@@ -193,8 +227,11 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeString",
 		CheckerFunc: "checkString",
 
-		TestingValue:           "\"hello\"",
-		UnexpectedTestingValue: "\"henlo\"",
+		TestingValue:                 "\"hello\"",
+		TestingValueOutput:           "hello",
+		UnexpectedTestingValue:       "\"bye\"",
+		UnexpectedTestingValueOutput: "bye",
+		ZeroTestingValueOutput:       zeroOutput[string](),
 	},
 	{
 		Name:        "bytes",
@@ -203,8 +240,11 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeBytes",
 		CheckerFunc: "checkBytes",
 
-		TestingValue:           "[]byte(\"hello\")",
-		UnexpectedTestingValue: "[]byte(\"henlo\")",
+		TestingValue:                 "[]byte{3, 14, 15}",
+		TestingValueOutput:           "[3 14 15]",
+		UnexpectedTestingValue:       "[]byte{3, 14, 15, 9, 26}",
+		UnexpectedTestingValueOutput: "[3 14 15 9 26]",
+		ZeroTestingValueOutput:       zeroOutput[[]byte](),
 	},
 	{
 		Name:        "bool",
@@ -215,6 +255,7 @@ var defaultTypes = []generatorDef{
 
 		TestingValue:           "true",
 		UnexpectedTestingValue: "false",
+		ZeroTestingValueOutput: zeroOutput[bool](),
 	},
 }
 
@@ -243,13 +284,6 @@ var _ commonInterface[{{.Type}}] = (*{{.Name}})(nil)
 
 // Some{{.Name}} creates an optional {{.Name}} with the given {{.Type}} value.
 // The returned {{.Name}} will have IsSome() == true and IsZero() == false.
-//
-// Example:
-//
-//	o := Some{{.Name}}({{.TestingValue}})
-//	if o.IsSome() {
-//	    v := o.Unwrap() // v == {{.TestingValue}}
-//	}
 func Some{{.Name}}(value {{.Type}}) {{.Name}} {
 	return {{.Name}}{
 		value: value,
@@ -259,13 +293,6 @@ func Some{{.Name}}(value {{.Type}}) {{.Name}} {
 
 // None{{.Name}} creates an empty optional {{.Name}} value.
 // The returned {{.Name}} will have IsSome() == false and IsZero() == true.
-//
-// Example:
-//
-//	o := None{{.Name}}()
-//	if o.IsZero() {
-//	    fmt.Println("value is absent")
-//	}
 func None{{.Name}}() {{.Name}} {
 	return {{.Name}}{
 		exists: false,
@@ -331,11 +358,6 @@ func (o {{.Name}}) Unwrap() {{.Type}} {
 
 // UnwrapOr returns the stored value if present.
 // Otherwise, returns the provided default value.
-//
-// Example:
-//
-//	o := None{{.Name}}()
-//	v := o.UnwrapOr(someDefault{{.Name}})
 func (o {{.Name}}) UnwrapOr(defaultValue {{.Type}}) {{.Type}} {
 	if o.exists {
 		return o.value
@@ -347,11 +369,6 @@ func (o {{.Name}}) UnwrapOr(defaultValue {{.Type}}) {{.Type}} {
 // UnwrapOrElse returns the stored value if present.
 // Otherwise, calls the provided function and returns its result.
 // Useful when the default value requires computation or side effects.
-//
-// Example:
-//
-//	o := None{{.Name}}()
-//	v := o.UnwrapOrElse(func() {{.Type}} { return computeDefault() })
 func (o {{.Name}}) UnwrapOrElse(defaultValue func() {{.Type}}) {{.Type}} {
 	if o.exists {
 		return o.value
@@ -418,6 +435,7 @@ import (
 	{{ end }}
 
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -622,6 +640,117 @@ func Test{{.Name}}_EncodeDecodeMsgpack(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, unmarshaled.IsSome())
 	})
+}
+
+func ExampleSome{{.Name}}() {
+	opt := option.Some{{.Name}}({{.TestingValue}})
+	if opt.IsSome() {
+		fmt.Println(opt.Unwrap())
+	}
+	// Output: {{.TestingValueOutput}}
+}
+
+func ExampleNone{{.Name}}() {
+	opt := option.None{{.Name}}()
+	if opt.IsZero() {
+		fmt.Println("value is absent")
+	}
+	// Output: value is absent
+}
+
+func Example{{.Name}}_IsSome() {
+	some := option.Some{{.Name}}({{.TestingValue}})
+	none := option.None{{.Name}}()
+	fmt.Println(some.IsSome())
+	fmt.Println(none.IsSome())
+	// Output:
+	// true
+	// false
+}
+
+func Example{{.Name}}_IsZero() {
+	some := option.Some{{.Name}}({{.TestingValue}})
+	none := option.None{{.Name}}()
+	fmt.Println(some.IsZero())
+	fmt.Println(none.IsZero())
+	// Output:
+	// false
+	// true
+}
+
+func Example{{.Name}}_IsNil() {
+	some := option.Some{{.Name}}({{.TestingValue}})
+	none := option.None{{.Name}}()
+	fmt.Println(some.IsNil() == some.IsZero())
+	fmt.Println(none.IsNil() == none.IsZero())
+	// Output:
+	// true
+	// true
+}
+
+func Example{{.Name}}_Get() {
+	some := option.Some{{.Name}}({{.TestingValue}})
+	none := option.None{{.Name}}()
+	val, ok := some.Get()
+	fmt.Println(val, ok)
+	val, ok = none.Get()
+	fmt.Println(val, ok)
+	// Output:
+	// {{.TestingValueOutput}} true
+	// {{.ZeroTestingValueOutput}} false
+}
+
+func Example{{.Name}}_MustGet() {
+	some := option.Some{{.Name}}({{.TestingValue}})
+	fmt.Println(some.MustGet())
+	// Output: {{.TestingValueOutput}}
+}
+
+func Example{{.Name}}_MustGet_panic() {
+	none := option.None{{.Name}}()
+	eof := false
+	defer func() {
+		if !eof {
+			fmt.Println("panic!", recover())
+		}
+	}()
+	fmt.Println(none.MustGet())
+	eof = true
+	// Output: panic! optional value is not set
+}
+
+func Example{{.Name}}_Unwrap() {
+	some := option.Some{{.Name}}({{.TestingValue}})
+	none := option.None{{.Name}}()
+	fmt.Println(some.Unwrap())
+	fmt.Println(none.Unwrap())
+	// Output:
+	// {{.TestingValueOutput}}
+	// {{.ZeroTestingValueOutput}}
+}
+
+func Example{{.Name}}_UnwrapOr() {
+	some := option.Some{{.Name}}({{.TestingValue}})
+	none := option.None{{.Name}}()
+	fmt.Println(some.UnwrapOr({{.UnexpectedTestingValue}}))
+	fmt.Println(none.UnwrapOr({{.UnexpectedTestingValue}}))
+	// Output:
+	// {{.TestingValueOutput}}
+	// {{.UnexpectedTestingValueOutput}}
+}
+
+func Example{{.Name}}_UnwrapOrElse() {
+	some := option.Some{{.Name}}({{.TestingValue}})
+	none := option.None{{.Name}}()
+	fmt.Println(some.UnwrapOrElse(func() {{.Type}} {
+		return {{.UnexpectedTestingValue}}
+	}))
+	fmt.Println(none.UnwrapOrElse(func() {{.Type}} {
+		return {{.UnexpectedTestingValue}}
+	}))
+	// Output:
+	// {{.TestingValueOutput}}
+	// {{.UnexpectedTestingValueOutput}}
 }
 `
 

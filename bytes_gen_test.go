@@ -4,6 +4,7 @@ package option_test
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,7 +20,7 @@ func TestBytes_IsSome(t *testing.T) {
 	t.Run("some", func(t *testing.T) {
 		t.Parallel()
 
-		someBytes := option.SomeBytes([]byte("hello"))
+		someBytes := option.SomeBytes([]byte{3, 14, 15})
 		assert.True(t, someBytes.IsSome())
 	})
 
@@ -37,7 +38,7 @@ func TestBytes_IsZero(t *testing.T) {
 	t.Run("some", func(t *testing.T) {
 		t.Parallel()
 
-		someBytes := option.SomeBytes([]byte("hello"))
+		someBytes := option.SomeBytes([]byte{3, 14, 15})
 		assert.False(t, someBytes.IsZero())
 	})
 
@@ -55,7 +56,7 @@ func TestBytes_IsNil(t *testing.T) {
 	t.Run("some", func(t *testing.T) {
 		t.Parallel()
 
-		someBytes := option.SomeBytes([]byte("hello"))
+		someBytes := option.SomeBytes([]byte{3, 14, 15})
 		assert.False(t, someBytes.IsNil())
 	})
 
@@ -73,10 +74,10 @@ func TestBytes_Get(t *testing.T) {
 	t.Run("some", func(t *testing.T) {
 		t.Parallel()
 
-		someBytes := option.SomeBytes([]byte("hello"))
+		someBytes := option.SomeBytes([]byte{3, 14, 15})
 		val, ok := someBytes.Get()
 		require.True(t, ok)
-		assert.EqualValues(t, []byte("hello"), val)
+		assert.EqualValues(t, []byte{3, 14, 15}, val)
 	})
 
 	t.Run("none", func(t *testing.T) {
@@ -94,8 +95,8 @@ func TestBytes_MustGet(t *testing.T) {
 	t.Run("some", func(t *testing.T) {
 		t.Parallel()
 
-		someBytes := option.SomeBytes([]byte("hello"))
-		assert.EqualValues(t, []byte("hello"), someBytes.MustGet())
+		someBytes := option.SomeBytes([]byte{3, 14, 15})
+		assert.EqualValues(t, []byte{3, 14, 15}, someBytes.MustGet())
 	})
 
 	t.Run("none", func(t *testing.T) {
@@ -114,8 +115,8 @@ func TestBytes_Unwrap(t *testing.T) {
 	t.Run("some", func(t *testing.T) {
 		t.Parallel()
 
-		someBytes := option.SomeBytes([]byte("hello"))
-		assert.EqualValues(t, []byte("hello"), someBytes.Unwrap())
+		someBytes := option.SomeBytes([]byte{3, 14, 15})
+		assert.EqualValues(t, []byte{3, 14, 15}, someBytes.Unwrap())
 	})
 
 	t.Run("none", func(t *testing.T) {
@@ -134,15 +135,15 @@ func TestBytes_UnwrapOr(t *testing.T) {
 	t.Run("some", func(t *testing.T) {
 		t.Parallel()
 
-		someBytes := option.SomeBytes([]byte("hello"))
-		assert.EqualValues(t, []byte("hello"), someBytes.UnwrapOr([]byte("henlo")))
+		someBytes := option.SomeBytes([]byte{3, 14, 15})
+		assert.EqualValues(t, []byte{3, 14, 15}, someBytes.UnwrapOr([]byte{3, 14, 15, 9, 26}))
 	})
 
 	t.Run("none", func(t *testing.T) {
 		t.Parallel()
 
 		emptyBytes := option.NoneBytes()
-		assert.EqualValues(t, []byte("henlo"), emptyBytes.UnwrapOr([]byte("henlo")))
+		assert.EqualValues(t, []byte{3, 14, 15, 9, 26}, emptyBytes.UnwrapOr([]byte{3, 14, 15, 9, 26}))
 	})
 }
 
@@ -152,9 +153,9 @@ func TestBytes_UnwrapOrElse(t *testing.T) {
 	t.Run("some", func(t *testing.T) {
 		t.Parallel()
 
-		someBytes := option.SomeBytes([]byte("hello"))
-		assert.EqualValues(t, []byte("hello"), someBytes.UnwrapOrElse(func() []byte {
-			return []byte("henlo")
+		someBytes := option.SomeBytes([]byte{3, 14, 15})
+		assert.EqualValues(t, []byte{3, 14, 15}, someBytes.UnwrapOrElse(func() []byte {
+			return []byte{3, 14, 15, 9, 26}
 		}))
 	})
 
@@ -162,8 +163,8 @@ func TestBytes_UnwrapOrElse(t *testing.T) {
 		t.Parallel()
 
 		emptyBytes := option.NoneBytes()
-		assert.EqualValues(t, []byte("henlo"), emptyBytes.UnwrapOrElse(func() []byte {
-			return []byte("henlo")
+		assert.EqualValues(t, []byte{3, 14, 15, 9, 26}, emptyBytes.UnwrapOrElse(func() []byte {
+			return []byte{3, 14, 15, 9, 26}
 		}))
 	})
 }
@@ -179,7 +180,7 @@ func TestBytes_EncodeDecodeMsgpack(t *testing.T) {
 		enc := msgpack.NewEncoder(&buf)
 		dec := msgpack.NewDecoder(&buf)
 
-		someBytes := option.SomeBytes([]byte("hello"))
+		someBytes := option.SomeBytes([]byte{3, 14, 15})
 		err := someBytes.EncodeMsgpack(enc)
 		require.NoError(t, err)
 
@@ -187,7 +188,7 @@ func TestBytes_EncodeDecodeMsgpack(t *testing.T) {
 		err = unmarshaled.DecodeMsgpack(dec)
 		require.NoError(t, err)
 		assert.True(t, unmarshaled.IsSome())
-		assert.EqualValues(t, []byte("hello"), unmarshaled.Unwrap())
+		assert.EqualValues(t, []byte{3, 14, 15}, unmarshaled.Unwrap())
 	})
 
 	t.Run("none", func(t *testing.T) {
@@ -208,4 +209,115 @@ func TestBytes_EncodeDecodeMsgpack(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, unmarshaled.IsSome())
 	})
+}
+
+func ExampleSomeBytes() {
+	opt := option.SomeBytes([]byte{3, 14, 15})
+	if opt.IsSome() {
+		fmt.Println(opt.Unwrap())
+	}
+	// Output: [3 14 15]
+}
+
+func ExampleNoneBytes() {
+	opt := option.NoneBytes()
+	if opt.IsZero() {
+		fmt.Println("value is absent")
+	}
+	// Output: value is absent
+}
+
+func ExampleBytes_IsSome() {
+	some := option.SomeBytes([]byte{3, 14, 15})
+	none := option.NoneBytes()
+	fmt.Println(some.IsSome())
+	fmt.Println(none.IsSome())
+	// Output:
+	// true
+	// false
+}
+
+func ExampleBytes_IsZero() {
+	some := option.SomeBytes([]byte{3, 14, 15})
+	none := option.NoneBytes()
+	fmt.Println(some.IsZero())
+	fmt.Println(none.IsZero())
+	// Output:
+	// false
+	// true
+}
+
+func ExampleBytes_IsNil() {
+	some := option.SomeBytes([]byte{3, 14, 15})
+	none := option.NoneBytes()
+	fmt.Println(some.IsNil() == some.IsZero())
+	fmt.Println(none.IsNil() == none.IsZero())
+	// Output:
+	// true
+	// true
+}
+
+func ExampleBytes_Get() {
+	some := option.SomeBytes([]byte{3, 14, 15})
+	none := option.NoneBytes()
+	val, ok := some.Get()
+	fmt.Println(val, ok)
+	val, ok = none.Get()
+	fmt.Println(val, ok)
+	// Output:
+	// [3 14 15] true
+	// [] false
+}
+
+func ExampleBytes_MustGet() {
+	some := option.SomeBytes([]byte{3, 14, 15})
+	fmt.Println(some.MustGet())
+	// Output: [3 14 15]
+}
+
+func ExampleBytes_MustGet_panic() {
+	none := option.NoneBytes()
+	eof := false
+	defer func() {
+		if !eof {
+			fmt.Println("panic!", recover())
+		}
+	}()
+	fmt.Println(none.MustGet())
+	eof = true
+	// Output: panic! optional value is not set
+}
+
+func ExampleBytes_Unwrap() {
+	some := option.SomeBytes([]byte{3, 14, 15})
+	none := option.NoneBytes()
+	fmt.Println(some.Unwrap())
+	fmt.Println(none.Unwrap())
+	// Output:
+	// [3 14 15]
+	// []
+}
+
+func ExampleBytes_UnwrapOr() {
+	some := option.SomeBytes([]byte{3, 14, 15})
+	none := option.NoneBytes()
+	fmt.Println(some.UnwrapOr([]byte{3, 14, 15, 9, 26}))
+	fmt.Println(none.UnwrapOr([]byte{3, 14, 15, 9, 26}))
+	// Output:
+	// [3 14 15]
+	// [3 14 15 9 26]
+}
+
+func ExampleBytes_UnwrapOrElse() {
+	some := option.SomeBytes([]byte{3, 14, 15})
+	none := option.NoneBytes()
+	fmt.Println(some.UnwrapOrElse(func() []byte {
+		return []byte{3, 14, 15, 9, 26}
+	}))
+	fmt.Println(none.UnwrapOrElse(func() []byte {
+		return []byte{3, 14, 15, 9, 26}
+	}))
+	// Output:
+	// [3 14 15]
+	// [3 14 15 9 26]
 }

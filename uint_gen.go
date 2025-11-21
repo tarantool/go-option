@@ -18,13 +18,6 @@ var _ commonInterface[uint] = (*Uint)(nil)
 
 // SomeUint creates an optional Uint with the given uint value.
 // The returned Uint will have IsSome() == true and IsZero() == false.
-//
-// Example:
-//
-//	o := SomeUint(12)
-//	if o.IsSome() {
-//	    v := o.Unwrap() // v == 12
-//	}
 func SomeUint(value uint) Uint {
 	return Uint{
 		value:  value,
@@ -34,13 +27,6 @@ func SomeUint(value uint) Uint {
 
 // NoneUint creates an empty optional Uint value.
 // The returned Uint will have IsSome() == false and IsZero() == true.
-//
-// Example:
-//
-//	o := NoneUint()
-//	if o.IsZero() {
-//	    fmt.Println("value is absent")
-//	}
 func NoneUint() Uint {
 	return Uint{
 		exists: false,
@@ -106,11 +92,6 @@ func (o Uint) Unwrap() uint {
 
 // UnwrapOr returns the stored value if present.
 // Otherwise, returns the provided default value.
-//
-// Example:
-//
-//	o := NoneUint()
-//	v := o.UnwrapOr(someDefaultUint)
 func (o Uint) UnwrapOr(defaultValue uint) uint {
 	if o.exists {
 		return o.value
@@ -122,11 +103,6 @@ func (o Uint) UnwrapOr(defaultValue uint) uint {
 // UnwrapOrElse returns the stored value if present.
 // Otherwise, calls the provided function and returns its result.
 // Useful when the default value requires computation or side effects.
-//
-// Example:
-//
-//	o := NoneUint()
-//	v := o.UnwrapOrElse(func() uint { return computeDefault() })
 func (o Uint) UnwrapOrElse(defaultValue func() uint) uint {
 	if o.exists {
 		return o.value

@@ -18,13 +18,6 @@ var _ commonInterface[[]byte] = (*Bytes)(nil)
 
 // SomeBytes creates an optional Bytes with the given []byte value.
 // The returned Bytes will have IsSome() == true and IsZero() == false.
-//
-// Example:
-//
-//	o := SomeBytes([]byte("hello"))
-//	if o.IsSome() {
-//	    v := o.Unwrap() // v == []byte("hello")
-//	}
 func SomeBytes(value []byte) Bytes {
 	return Bytes{
 		value:  value,
@@ -34,13 +27,6 @@ func SomeBytes(value []byte) Bytes {
 
 // NoneBytes creates an empty optional Bytes value.
 // The returned Bytes will have IsSome() == false and IsZero() == true.
-//
-// Example:
-//
-//	o := NoneBytes()
-//	if o.IsZero() {
-//	    fmt.Println("value is absent")
-//	}
 func NoneBytes() Bytes {
 	return Bytes{
 		exists: false,
@@ -106,11 +92,6 @@ func (o Bytes) Unwrap() []byte {
 
 // UnwrapOr returns the stored value if present.
 // Otherwise, returns the provided default value.
-//
-// Example:
-//
-//	o := NoneBytes()
-//	v := o.UnwrapOr(someDefaultBytes)
 func (o Bytes) UnwrapOr(defaultValue []byte) []byte {
 	if o.exists {
 		return o.value
@@ -122,11 +103,6 @@ func (o Bytes) UnwrapOr(defaultValue []byte) []byte {
 // UnwrapOrElse returns the stored value if present.
 // Otherwise, calls the provided function and returns its result.
 // Useful when the default value requires computation or side effects.
-//
-// Example:
-//
-//	o := NoneBytes()
-//	v := o.UnwrapOrElse(func() []byte { return computeDefault() })
 func (o Bytes) UnwrapOrElse(defaultValue func() []byte) []byte {
 	if o.exists {
 		return o.value

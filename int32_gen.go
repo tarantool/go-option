@@ -18,13 +18,6 @@ var _ commonInterface[int32] = (*Int32)(nil)
 
 // SomeInt32 creates an optional Int32 with the given int32 value.
 // The returned Int32 will have IsSome() == true and IsZero() == false.
-//
-// Example:
-//
-//	o := SomeInt32(12)
-//	if o.IsSome() {
-//	    v := o.Unwrap() // v == 12
-//	}
 func SomeInt32(value int32) Int32 {
 	return Int32{
 		value:  value,
@@ -34,13 +27,6 @@ func SomeInt32(value int32) Int32 {
 
 // NoneInt32 creates an empty optional Int32 value.
 // The returned Int32 will have IsSome() == false and IsZero() == true.
-//
-// Example:
-//
-//	o := NoneInt32()
-//	if o.IsZero() {
-//	    fmt.Println("value is absent")
-//	}
 func NoneInt32() Int32 {
 	return Int32{
 		exists: false,
@@ -106,11 +92,6 @@ func (o Int32) Unwrap() int32 {
 
 // UnwrapOr returns the stored value if present.
 // Otherwise, returns the provided default value.
-//
-// Example:
-//
-//	o := NoneInt32()
-//	v := o.UnwrapOr(someDefaultInt32)
 func (o Int32) UnwrapOr(defaultValue int32) int32 {
 	if o.exists {
 		return o.value
@@ -122,11 +103,6 @@ func (o Int32) UnwrapOr(defaultValue int32) int32 {
 // UnwrapOrElse returns the stored value if present.
 // Otherwise, calls the provided function and returns its result.
 // Useful when the default value requires computation or side effects.
-//
-// Example:
-//
-//	o := NoneInt32()
-//	v := o.UnwrapOrElse(func() int32 { return computeDefault() })
 func (o Int32) UnwrapOrElse(defaultValue func() int32) int32 {
 	if o.exists {
 		return o.value
