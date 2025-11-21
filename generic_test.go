@@ -1,6 +1,7 @@
 package option_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -10,24 +11,130 @@ import (
 	"github.com/tarantool/go-option"
 )
 
-// TestSomeAndIsSome verifies that Some() creates a valid optional and IsSome returns true.
-func TestSomeAndIsSome(t *testing.T) {
-	t.Parallel()
+func ExampleSome() {
+	opt := option.Some("hello")
 
-	opt := option.Some(42)
-	assert.True(t, opt.IsSome())
-	assert.False(t, opt.IsZero())
-	assert.False(t, opt.IsNil())
+	fmt.Println(opt.IsSome())
+	fmt.Println(opt.Unwrap())
+	// Output:
+	// true
+	// hello
 }
 
-// TestNoneAndIsZero verifies that None() creates an empty optional and IsZero/IsNil returns true.
-func TestNoneAndIsZero(t *testing.T) {
-	t.Parallel()
-
+func ExampleNone() {
 	opt := option.None[int]()
-	assert.True(t, opt.IsZero())
-	assert.True(t, opt.IsNil())
-	assert.False(t, opt.IsSome())
+
+	fmt.Println(opt.IsSome())
+	fmt.Println(opt.Unwrap())
+	// Output:
+	// false
+	// 0
+}
+
+func ExampleGeneric_IsSome() {
+	some := option.Some("hello")
+	none := option.None[string]()
+
+	fmt.Println(some.IsSome())
+	fmt.Println(none.IsSome())
+	// Output:
+	// true
+	// false
+}
+
+func ExampleGeneric_IsZero() {
+	some := option.Some("hello")
+	none := option.None[string]()
+
+	fmt.Println(some.IsZero())
+	fmt.Println(none.IsZero())
+	// Output:
+	// false
+	// true
+}
+
+func ExampleGeneric_IsNil() {
+	some := option.Some("hello")
+	none := option.None[string]()
+
+	fmt.Println(some.IsNil() == some.IsZero())
+	fmt.Println(none.IsNil() == none.IsZero())
+	// Output:
+	// true
+	// true
+}
+
+func ExampleGeneric_Get() {
+	some := option.Some(12)
+	none := option.None[int]()
+
+	val, ok := some.Get()
+	fmt.Println(val, ok)
+
+	val, ok = none.Get()
+	fmt.Println(val, ok)
+	// Output:
+	// 12 true
+	// 0 false
+}
+
+func ExampleGeneric_MustGet() {
+	some := option.Some(12)
+	fmt.Println(some.MustGet())
+	// Output: 12
+}
+
+func ExampleGeneric_MustGet_panic() {
+	none := option.None[int]()
+	eof := false
+
+	defer func() {
+		if !eof {
+			fmt.Println("panic!", recover())
+		}
+	}()
+
+	fmt.Println(none.MustGet())
+
+	eof = true
+	// Output: panic! optional value is not set
+}
+
+func ExampleGeneric_Unwrap() {
+	some := option.Some(12)
+	none := option.None[int]()
+
+	fmt.Println(some.Unwrap())
+	fmt.Println(none.Unwrap())
+	// Output:
+	// 12
+	// 0
+}
+
+func ExampleGeneric_UnwrapOr() {
+	some := option.Some(12)
+	none := option.None[int]()
+
+	fmt.Println(some.UnwrapOr(13))
+	fmt.Println(none.UnwrapOr(13))
+	// Output:
+	// 12
+	// 13
+}
+
+func ExampleGeneric_UnwrapOrElse() {
+	some := option.Some(12)
+	none := option.None[int]()
+
+	fmt.Println(some.UnwrapOrElse(func() int {
+		return 13
+	}))
+	fmt.Println(none.UnwrapOrElse(func() int {
+		return 13
+	}))
+	// Output:
+	// 12
+	// 13
 }
 
 // TestZeroValueIsZero verifies that the zero value of Generic[T] behaves as None.
@@ -38,100 +145,6 @@ func TestZeroValueIsZero(t *testing.T) {
 	assert.True(t, opt.IsZero())
 	assert.True(t, opt.IsNil())
 	assert.False(t, opt.IsSome())
-}
-
-// TestGetWithValue verifies Get returns the value and true when present.
-func TestGetWithValue(t *testing.T) {
-	t.Parallel()
-
-	opt := option.Some("hello")
-	value, ok := opt.Get()
-	assert.True(t, ok)
-	assert.Equal(t, "hello", value)
-}
-
-// TestGetWithoutValue verifies Get returns zero value and false when absent.
-func TestGetWithoutValue(t *testing.T) {
-	t.Parallel()
-
-	opt := option.None[float64]()
-	value, ok := opt.Get()
-	assert.False(t, ok)
-	assert.InDelta(t, 0.0, value, 1e-6) // Zero value of float64.
-}
-
-// TestMustGetWithValue verifies MustGet returns the value when present.
-func TestMustGetWithValue(t *testing.T) {
-	t.Parallel()
-
-	opt := option.Some(99)
-	value := opt.MustGet()
-	assert.Equal(t, 99, value)
-}
-
-// TestMustGetPanic verifies MustGet panics when no value is present.
-func TestMustGetPanic(t *testing.T) {
-	t.Parallel()
-
-	opt := option.None[bool]()
-	assert.Panics(t, func() { opt.MustGet() }) //nolint:wsl_v5
-}
-
-// TestUnwrapAlias verifies Unwrap is an alias for MustGet.
-func TestUnwrapAlias(t *testing.T) {
-	t.Parallel()
-
-	opt := option.Some("test")
-	assert.Equal(t, "test", opt.Unwrap())
-
-	emptyOpt := option.None[string]()
-	assert.Empty(t, emptyOpt.Unwrap())
-}
-
-// TestUnwrapOrWithValue verifies UnwrapOr returns inner value when present.
-func TestUnwrapOrWithValue(t *testing.T) {
-	t.Parallel()
-
-	opt := option.Some("actual")
-	assert.Equal(t, "actual", opt.UnwrapOr("default"))
-}
-
-// TestUnwrapOrWithoutValue verifies UnwrapOr returns default when absent.
-func TestUnwrapOrWithoutValue(t *testing.T) {
-	t.Parallel()
-
-	opt := option.None[string]()
-	assert.Equal(t, "default", opt.UnwrapOr("default"))
-}
-
-// TestUnwrapOrElseWithValue verifies UnwrapOrElse returns inner value when present.
-func TestUnwrapOrElseWithValue(t *testing.T) {
-	t.Parallel()
-
-	opt := option.Some(100)
-	result := opt.UnwrapOrElse(func() int {
-		return 200 // Should not be called.
-	})
-	assert.Equal(t, 100, result)
-}
-
-// TestUnwrapOrElseWithoutValue verifies UnwrapOrElse calls func when absent.
-func TestUnwrapOrElseWithoutValue(t *testing.T) {
-	t.Parallel()
-
-	var (
-		called bool
-		opt    = option.None[int]()
-	)
-
-	result := opt.UnwrapOrElse(func() int {
-		called = true
-
-		return 42
-	})
-
-	assert.True(t, called)
-	assert.Equal(t, 42, result)
 }
 
 // TestMsgpackEncodeSome verifies that a Some value is correctly encoded to MessagePack.

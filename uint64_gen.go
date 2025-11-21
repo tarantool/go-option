@@ -18,13 +18,6 @@ var _ commonInterface[uint64] = (*Uint64)(nil)
 
 // SomeUint64 creates an optional Uint64 with the given uint64 value.
 // The returned Uint64 will have IsSome() == true and IsZero() == false.
-//
-// Example:
-//
-//	o := SomeUint64(12)
-//	if o.IsSome() {
-//	    v := o.Unwrap() // v == 12
-//	}
 func SomeUint64(value uint64) Uint64 {
 	return Uint64{
 		value:  value,
@@ -34,13 +27,6 @@ func SomeUint64(value uint64) Uint64 {
 
 // NoneUint64 creates an empty optional Uint64 value.
 // The returned Uint64 will have IsSome() == false and IsZero() == true.
-//
-// Example:
-//
-//	o := NoneUint64()
-//	if o.IsZero() {
-//	    fmt.Println("value is absent")
-//	}
 func NoneUint64() Uint64 {
 	return Uint64{
 		exists: false,
@@ -106,11 +92,6 @@ func (o Uint64) Unwrap() uint64 {
 
 // UnwrapOr returns the stored value if present.
 // Otherwise, returns the provided default value.
-//
-// Example:
-//
-//	o := NoneUint64()
-//	v := o.UnwrapOr(someDefaultUint64)
 func (o Uint64) UnwrapOr(defaultValue uint64) uint64 {
 	if o.exists {
 		return o.value
@@ -122,11 +103,6 @@ func (o Uint64) UnwrapOr(defaultValue uint64) uint64 {
 // UnwrapOrElse returns the stored value if present.
 // Otherwise, calls the provided function and returns its result.
 // Useful when the default value requires computation or side effects.
-//
-// Example:
-//
-//	o := NoneUint64()
-//	v := o.UnwrapOrElse(func() uint64 { return computeDefault() })
 func (o Uint64) UnwrapOrElse(defaultValue func() uint64) uint64 {
 	if o.exists {
 		return o.value
