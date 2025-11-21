@@ -30,11 +30,6 @@ var _ commonInterface[any] = (*Generic[any])(nil)
 // Some creates a Generic[T] containing the given value.
 //
 // The returned Generic is in the "some" state, meaning IsSome() will return true.
-//
-// Example:
-//
-//	opt := option.Some("hello")
-//	fmt.Println(opt.IsSome()) // true
 func Some[T any](value T) Generic[T] {
 	return Generic[T]{
 		value:  value,
@@ -45,33 +40,16 @@ func Some[T any](value T) Generic[T] {
 // None creates an Generic[T] that does not contain a value.
 //
 // The returned Generic is in the "none" state, meaning IsZero() will return true.
-//
-// Example:
-//
-//	opt := option.None[int]()
-//	fmt.Println(opt.IsZero()) // true
 func None[T any]() Generic[T] {
 	return Generic[T]{exists: false} //nolint:exhaustruct
 }
 
 // IsSome returns true if the optional contains a value.
-//
-// Example:
-//
-//	if opt.IsSome() {
-//	    // safely access value
-//	}
 func (o Generic[T]) IsSome() bool {
 	return o.exists
 }
 
 // IsZero returns true if the optional does not contain a value.
-//
-// Example:
-//
-//	if opt.IsZero() {
-//	    log.Println("value is missing")
-//	}
 func (o Generic[T]) IsZero() bool {
 	return !o.exists
 }
@@ -87,15 +65,6 @@ func (o Generic[T]) IsNil() bool {
 //
 // This is the safest way to extract the value. The second return value is true if a value
 // is present, false otherwise. The first return value is the zero value of T when no value exists.
-//
-// Example:
-//
-//	value, ok := opt.Get()
-//	if ok {
-//	    process(value)
-//	} else {
-//	    fmt.Println("no value available")
-//	}
 func (o Generic[T]) Get() (T, bool) {
 	return o.value, o.exists
 }
@@ -106,10 +75,6 @@ func (o Generic[T]) Get() (T, bool) {
 //
 // Only use this method when you are certain the value exists.
 // For safer access, use Get() instead.
-//
-// Example:
-//
-//	value := opt.MustGet() // panics if value not set
 func (o Generic[T]) MustGet() T {
 	if !o.exists {
 		panic("optional value is not set")
@@ -130,10 +95,6 @@ func (o Generic[T]) Unwrap() T {
 // UnwrapOr returns the contained value if present, otherwise returns the provided default value.
 //
 // This is useful when you want to provide a simple fallback value.
-//
-// Example:
-//
-//	name := opt.UnwrapOr("default")
 func (o Generic[T]) UnwrapOr(defaultValue T) T {
 	if o.exists {
 		return o.value
@@ -146,10 +107,6 @@ func (o Generic[T]) UnwrapOr(defaultValue T) T {
 // to compute a default value.
 //
 // This is useful when the default value is expensive to compute, or requires dynamic logic.
-//
-// Example:
-//
-//	value := opt.UnwrapOrElse(fetchFromDatabase)
 func (o Generic[T]) UnwrapOrElse(defaultValueFunc func() T) T {
 	if o.exists {
 		return o.value

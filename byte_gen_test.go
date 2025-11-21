@@ -4,6 +4,7 @@ package option_test
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -208,4 +209,115 @@ func TestByte_EncodeDecodeMsgpack(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, unmarshaled.IsSome())
 	})
+}
+
+func ExampleSomeByte() {
+	opt := option.SomeByte(12)
+	if opt.IsSome() {
+		fmt.Println(opt.Unwrap())
+	}
+	// Output: 12
+}
+
+func ExampleNoneByte() {
+	opt := option.NoneByte()
+	if opt.IsZero() {
+		fmt.Println("value is absent")
+	}
+	// Output: value is absent
+}
+
+func ExampleByte_IsSome() {
+	some := option.SomeByte(12)
+	none := option.NoneByte()
+	fmt.Println(some.IsSome())
+	fmt.Println(none.IsSome())
+	// Output:
+	// true
+	// false
+}
+
+func ExampleByte_IsZero() {
+	some := option.SomeByte(12)
+	none := option.NoneByte()
+	fmt.Println(some.IsZero())
+	fmt.Println(none.IsZero())
+	// Output:
+	// false
+	// true
+}
+
+func ExampleByte_IsNil() {
+	some := option.SomeByte(12)
+	none := option.NoneByte()
+	fmt.Println(some.IsNil() == some.IsZero())
+	fmt.Println(none.IsNil() == none.IsZero())
+	// Output:
+	// true
+	// true
+}
+
+func ExampleByte_Get() {
+	some := option.SomeByte(12)
+	none := option.NoneByte()
+	val, ok := some.Get()
+	fmt.Println(val, ok)
+	val, ok = none.Get()
+	fmt.Println(val, ok)
+	// Output:
+	// 12 true
+	// 0 false
+}
+
+func ExampleByte_MustGet() {
+	some := option.SomeByte(12)
+	fmt.Println(some.MustGet())
+	// Output: 12
+}
+
+func ExampleByte_MustGet_panic() {
+	none := option.NoneByte()
+	eof := false
+	defer func() {
+		if !eof {
+			fmt.Println("panic!", recover())
+		}
+	}()
+	fmt.Println(none.MustGet())
+	eof = true
+	// Output: panic! optional value is not set
+}
+
+func ExampleByte_Unwrap() {
+	some := option.SomeByte(12)
+	none := option.NoneByte()
+	fmt.Println(some.Unwrap())
+	fmt.Println(none.Unwrap())
+	// Output:
+	// 12
+	// 0
+}
+
+func ExampleByte_UnwrapOr() {
+	some := option.SomeByte(12)
+	none := option.NoneByte()
+	fmt.Println(some.UnwrapOr(13))
+	fmt.Println(none.UnwrapOr(13))
+	// Output:
+	// 12
+	// 13
+}
+
+func ExampleByte_UnwrapOrElse() {
+	some := option.SomeByte(12)
+	none := option.NoneByte()
+	fmt.Println(some.UnwrapOrElse(func() byte {
+		return 13
+	}))
+	fmt.Println(none.UnwrapOrElse(func() byte {
+		return 13
+	}))
+	// Output:
+	// 12
+	// 13
 }

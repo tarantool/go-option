@@ -4,6 +4,7 @@ package option_test
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -208,4 +209,115 @@ func TestInt16_EncodeDecodeMsgpack(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, unmarshaled.IsSome())
 	})
+}
+
+func ExampleSomeInt16() {
+	opt := option.SomeInt16(12)
+	if opt.IsSome() {
+		fmt.Println(opt.Unwrap())
+	}
+	// Output: 12
+}
+
+func ExampleNoneInt16() {
+	opt := option.NoneInt16()
+	if opt.IsZero() {
+		fmt.Println("value is absent")
+	}
+	// Output: value is absent
+}
+
+func ExampleInt16_IsSome() {
+	some := option.SomeInt16(12)
+	none := option.NoneInt16()
+	fmt.Println(some.IsSome())
+	fmt.Println(none.IsSome())
+	// Output:
+	// true
+	// false
+}
+
+func ExampleInt16_IsZero() {
+	some := option.SomeInt16(12)
+	none := option.NoneInt16()
+	fmt.Println(some.IsZero())
+	fmt.Println(none.IsZero())
+	// Output:
+	// false
+	// true
+}
+
+func ExampleInt16_IsNil() {
+	some := option.SomeInt16(12)
+	none := option.NoneInt16()
+	fmt.Println(some.IsNil() == some.IsZero())
+	fmt.Println(none.IsNil() == none.IsZero())
+	// Output:
+	// true
+	// true
+}
+
+func ExampleInt16_Get() {
+	some := option.SomeInt16(12)
+	none := option.NoneInt16()
+	val, ok := some.Get()
+	fmt.Println(val, ok)
+	val, ok = none.Get()
+	fmt.Println(val, ok)
+	// Output:
+	// 12 true
+	// 0 false
+}
+
+func ExampleInt16_MustGet() {
+	some := option.SomeInt16(12)
+	fmt.Println(some.MustGet())
+	// Output: 12
+}
+
+func ExampleInt16_MustGet_panic() {
+	none := option.NoneInt16()
+	eof := false
+	defer func() {
+		if !eof {
+			fmt.Println("panic!", recover())
+		}
+	}()
+	fmt.Println(none.MustGet())
+	eof = true
+	// Output: panic! optional value is not set
+}
+
+func ExampleInt16_Unwrap() {
+	some := option.SomeInt16(12)
+	none := option.NoneInt16()
+	fmt.Println(some.Unwrap())
+	fmt.Println(none.Unwrap())
+	// Output:
+	// 12
+	// 0
+}
+
+func ExampleInt16_UnwrapOr() {
+	some := option.SomeInt16(12)
+	none := option.NoneInt16()
+	fmt.Println(some.UnwrapOr(13))
+	fmt.Println(none.UnwrapOr(13))
+	// Output:
+	// 12
+	// 13
+}
+
+func ExampleInt16_UnwrapOrElse() {
+	some := option.SomeInt16(12)
+	none := option.NoneInt16()
+	fmt.Println(some.UnwrapOrElse(func() int16 {
+		return 13
+	}))
+	fmt.Println(none.UnwrapOrElse(func() int16 {
+		return 13
+	}))
+	// Output:
+	// 12
+	// 13
 }

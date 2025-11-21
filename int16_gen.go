@@ -18,13 +18,6 @@ var _ commonInterface[int16] = (*Int16)(nil)
 
 // SomeInt16 creates an optional Int16 with the given int16 value.
 // The returned Int16 will have IsSome() == true and IsZero() == false.
-//
-// Example:
-//
-//	o := SomeInt16(12)
-//	if o.IsSome() {
-//	    v := o.Unwrap() // v == 12
-//	}
 func SomeInt16(value int16) Int16 {
 	return Int16{
 		value:  value,
@@ -34,13 +27,6 @@ func SomeInt16(value int16) Int16 {
 
 // NoneInt16 creates an empty optional Int16 value.
 // The returned Int16 will have IsSome() == false and IsZero() == true.
-//
-// Example:
-//
-//	o := NoneInt16()
-//	if o.IsZero() {
-//	    fmt.Println("value is absent")
-//	}
 func NoneInt16() Int16 {
 	return Int16{
 		exists: false,
@@ -106,11 +92,6 @@ func (o Int16) Unwrap() int16 {
 
 // UnwrapOr returns the stored value if present.
 // Otherwise, returns the provided default value.
-//
-// Example:
-//
-//	o := NoneInt16()
-//	v := o.UnwrapOr(someDefaultInt16)
 func (o Int16) UnwrapOr(defaultValue int16) int16 {
 	if o.exists {
 		return o.value
@@ -122,11 +103,6 @@ func (o Int16) UnwrapOr(defaultValue int16) int16 {
 // UnwrapOrElse returns the stored value if present.
 // Otherwise, calls the provided function and returns its result.
 // Useful when the default value requires computation or side effects.
-//
-// Example:
-//
-//	o := NoneInt16()
-//	v := o.UnwrapOrElse(func() int16 { return computeDefault() })
 func (o Int16) UnwrapOrElse(defaultValue func() int16) int16 {
 	if o.exists {
 		return o.value

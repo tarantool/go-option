@@ -4,6 +4,7 @@ package option_test
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -208,4 +209,115 @@ func TestUint8_EncodeDecodeMsgpack(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, unmarshaled.IsSome())
 	})
+}
+
+func ExampleSomeUint8() {
+	opt := option.SomeUint8(12)
+	if opt.IsSome() {
+		fmt.Println(opt.Unwrap())
+	}
+	// Output: 12
+}
+
+func ExampleNoneUint8() {
+	opt := option.NoneUint8()
+	if opt.IsZero() {
+		fmt.Println("value is absent")
+	}
+	// Output: value is absent
+}
+
+func ExampleUint8_IsSome() {
+	some := option.SomeUint8(12)
+	none := option.NoneUint8()
+	fmt.Println(some.IsSome())
+	fmt.Println(none.IsSome())
+	// Output:
+	// true
+	// false
+}
+
+func ExampleUint8_IsZero() {
+	some := option.SomeUint8(12)
+	none := option.NoneUint8()
+	fmt.Println(some.IsZero())
+	fmt.Println(none.IsZero())
+	// Output:
+	// false
+	// true
+}
+
+func ExampleUint8_IsNil() {
+	some := option.SomeUint8(12)
+	none := option.NoneUint8()
+	fmt.Println(some.IsNil() == some.IsZero())
+	fmt.Println(none.IsNil() == none.IsZero())
+	// Output:
+	// true
+	// true
+}
+
+func ExampleUint8_Get() {
+	some := option.SomeUint8(12)
+	none := option.NoneUint8()
+	val, ok := some.Get()
+	fmt.Println(val, ok)
+	val, ok = none.Get()
+	fmt.Println(val, ok)
+	// Output:
+	// 12 true
+	// 0 false
+}
+
+func ExampleUint8_MustGet() {
+	some := option.SomeUint8(12)
+	fmt.Println(some.MustGet())
+	// Output: 12
+}
+
+func ExampleUint8_MustGet_panic() {
+	none := option.NoneUint8()
+	eof := false
+	defer func() {
+		if !eof {
+			fmt.Println("panic!", recover())
+		}
+	}()
+	fmt.Println(none.MustGet())
+	eof = true
+	// Output: panic! optional value is not set
+}
+
+func ExampleUint8_Unwrap() {
+	some := option.SomeUint8(12)
+	none := option.NoneUint8()
+	fmt.Println(some.Unwrap())
+	fmt.Println(none.Unwrap())
+	// Output:
+	// 12
+	// 0
+}
+
+func ExampleUint8_UnwrapOr() {
+	some := option.SomeUint8(12)
+	none := option.NoneUint8()
+	fmt.Println(some.UnwrapOr(13))
+	fmt.Println(none.UnwrapOr(13))
+	// Output:
+	// 12
+	// 13
+}
+
+func ExampleUint8_UnwrapOrElse() {
+	some := option.SomeUint8(12)
+	none := option.NoneUint8()
+	fmt.Println(some.UnwrapOrElse(func() uint8 {
+		return 13
+	}))
+	fmt.Println(none.UnwrapOrElse(func() uint8 {
+		return 13
+	}))
+	// Output:
+	// 12
+	// 13
 }

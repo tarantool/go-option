@@ -18,13 +18,6 @@ var _ commonInterface[string] = (*String)(nil)
 
 // SomeString creates an optional String with the given string value.
 // The returned String will have IsSome() == true and IsZero() == false.
-//
-// Example:
-//
-//	o := SomeString("hello")
-//	if o.IsSome() {
-//	    v := o.Unwrap() // v == "hello"
-//	}
 func SomeString(value string) String {
 	return String{
 		value:  value,
@@ -34,13 +27,6 @@ func SomeString(value string) String {
 
 // NoneString creates an empty optional String value.
 // The returned String will have IsSome() == false and IsZero() == true.
-//
-// Example:
-//
-//	o := NoneString()
-//	if o.IsZero() {
-//	    fmt.Println("value is absent")
-//	}
 func NoneString() String {
 	return String{
 		exists: false,
@@ -106,11 +92,6 @@ func (o String) Unwrap() string {
 
 // UnwrapOr returns the stored value if present.
 // Otherwise, returns the provided default value.
-//
-// Example:
-//
-//	o := NoneString()
-//	v := o.UnwrapOr(someDefaultString)
 func (o String) UnwrapOr(defaultValue string) string {
 	if o.exists {
 		return o.value
@@ -122,11 +103,6 @@ func (o String) UnwrapOr(defaultValue string) string {
 // UnwrapOrElse returns the stored value if present.
 // Otherwise, calls the provided function and returns its result.
 // Useful when the default value requires computation or side effects.
-//
-// Example:
-//
-//	o := NoneString()
-//	v := o.UnwrapOrElse(func() string { return computeDefault() })
 func (o String) UnwrapOrElse(defaultValue func() string) string {
 	if o.exists {
 		return o.value

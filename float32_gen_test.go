@@ -4,6 +4,7 @@ package option_test
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -208,4 +209,115 @@ func TestFloat32_EncodeDecodeMsgpack(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, unmarshaled.IsSome())
 	})
+}
+
+func ExampleSomeFloat32() {
+	opt := option.SomeFloat32(12)
+	if opt.IsSome() {
+		fmt.Println(opt.Unwrap())
+	}
+	// Output: 12
+}
+
+func ExampleNoneFloat32() {
+	opt := option.NoneFloat32()
+	if opt.IsZero() {
+		fmt.Println("value is absent")
+	}
+	// Output: value is absent
+}
+
+func ExampleFloat32_IsSome() {
+	some := option.SomeFloat32(12)
+	none := option.NoneFloat32()
+	fmt.Println(some.IsSome())
+	fmt.Println(none.IsSome())
+	// Output:
+	// true
+	// false
+}
+
+func ExampleFloat32_IsZero() {
+	some := option.SomeFloat32(12)
+	none := option.NoneFloat32()
+	fmt.Println(some.IsZero())
+	fmt.Println(none.IsZero())
+	// Output:
+	// false
+	// true
+}
+
+func ExampleFloat32_IsNil() {
+	some := option.SomeFloat32(12)
+	none := option.NoneFloat32()
+	fmt.Println(some.IsNil() == some.IsZero())
+	fmt.Println(none.IsNil() == none.IsZero())
+	// Output:
+	// true
+	// true
+}
+
+func ExampleFloat32_Get() {
+	some := option.SomeFloat32(12)
+	none := option.NoneFloat32()
+	val, ok := some.Get()
+	fmt.Println(val, ok)
+	val, ok = none.Get()
+	fmt.Println(val, ok)
+	// Output:
+	// 12 true
+	// 0 false
+}
+
+func ExampleFloat32_MustGet() {
+	some := option.SomeFloat32(12)
+	fmt.Println(some.MustGet())
+	// Output: 12
+}
+
+func ExampleFloat32_MustGet_panic() {
+	none := option.NoneFloat32()
+	eof := false
+	defer func() {
+		if !eof {
+			fmt.Println("panic!", recover())
+		}
+	}()
+	fmt.Println(none.MustGet())
+	eof = true
+	// Output: panic! optional value is not set
+}
+
+func ExampleFloat32_Unwrap() {
+	some := option.SomeFloat32(12)
+	none := option.NoneFloat32()
+	fmt.Println(some.Unwrap())
+	fmt.Println(none.Unwrap())
+	// Output:
+	// 12
+	// 0
+}
+
+func ExampleFloat32_UnwrapOr() {
+	some := option.SomeFloat32(12)
+	none := option.NoneFloat32()
+	fmt.Println(some.UnwrapOr(13))
+	fmt.Println(none.UnwrapOr(13))
+	// Output:
+	// 12
+	// 13
+}
+
+func ExampleFloat32_UnwrapOrElse() {
+	some := option.SomeFloat32(12)
+	none := option.NoneFloat32()
+	fmt.Println(some.UnwrapOrElse(func() float32 {
+		return 13
+	}))
+	fmt.Println(none.UnwrapOrElse(func() float32 {
+		return 13
+	}))
+	// Output:
+	// 12
+	// 13
 }
