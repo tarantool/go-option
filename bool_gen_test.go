@@ -4,6 +4,7 @@ package option_test
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -208,4 +209,115 @@ func TestBool_EncodeDecodeMsgpack(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, unmarshaled.IsSome())
 	})
+}
+
+func ExampleSomeBool() {
+	opt := option.SomeBool(true)
+	if opt.IsSome() {
+		fmt.Println(opt.Unwrap())
+	}
+	// Output: true
+}
+
+func ExampleNoneBool() {
+	opt := option.NoneBool()
+	if opt.IsZero() {
+		fmt.Println("value is absent")
+	}
+	// Output: value is absent
+}
+
+func ExampleBool_IsSome() {
+	some := option.SomeBool(true)
+	none := option.NoneBool()
+	fmt.Println(some.IsSome())
+	fmt.Println(none.IsSome())
+	// Output:
+	// true
+	// false
+}
+
+func ExampleBool_IsZero() {
+	some := option.SomeBool(true)
+	none := option.NoneBool()
+	fmt.Println(some.IsZero())
+	fmt.Println(none.IsZero())
+	// Output:
+	// false
+	// true
+}
+
+func ExampleBool_IsNil() {
+	some := option.SomeBool(true)
+	none := option.NoneBool()
+	fmt.Println(some.IsNil() == some.IsZero())
+	fmt.Println(none.IsNil() == none.IsZero())
+	// Output:
+	// true
+	// true
+}
+
+func ExampleBool_Get() {
+	some := option.SomeBool(true)
+	none := option.NoneBool()
+	val, ok := some.Get()
+	fmt.Println(val, ok)
+	val, ok = none.Get()
+	fmt.Println(val, ok)
+	// Output:
+	// true true
+	// false false
+}
+
+func ExampleBool_MustGet() {
+	some := option.SomeBool(true)
+	fmt.Println(some.MustGet())
+	// Output: true
+}
+
+func ExampleBool_MustGet_panic() {
+	none := option.NoneBool()
+	eof := false
+	defer func() {
+		if !eof {
+			fmt.Println("panic!", recover())
+		}
+	}()
+	fmt.Println(none.MustGet())
+	eof = true
+	// Output: panic! optional value is not set
+}
+
+func ExampleBool_Unwrap() {
+	some := option.SomeBool(true)
+	none := option.NoneBool()
+	fmt.Println(some.Unwrap())
+	fmt.Println(none.Unwrap())
+	// Output:
+	// true
+	// false
+}
+
+func ExampleBool_UnwrapOr() {
+	some := option.SomeBool(true)
+	none := option.NoneBool()
+	fmt.Println(some.UnwrapOr(false))
+	fmt.Println(none.UnwrapOr(false))
+	// Output:
+	// true
+	// false
+}
+
+func ExampleBool_UnwrapOrElse() {
+	some := option.SomeBool(true)
+	none := option.NoneBool()
+	fmt.Println(some.UnwrapOrElse(func() bool {
+		return false
+	}))
+	fmt.Println(none.UnwrapOrElse(func() bool {
+		return false
+	}))
+	// Output:
+	// true
+	// false
 }

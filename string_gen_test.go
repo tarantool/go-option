@@ -4,6 +4,7 @@ package option_test
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -135,14 +136,14 @@ func TestString_UnwrapOr(t *testing.T) {
 		t.Parallel()
 
 		someString := option.SomeString("hello")
-		assert.EqualValues(t, "hello", someString.UnwrapOr("henlo"))
+		assert.EqualValues(t, "hello", someString.UnwrapOr("bye"))
 	})
 
 	t.Run("none", func(t *testing.T) {
 		t.Parallel()
 
 		emptyString := option.NoneString()
-		assert.EqualValues(t, "henlo", emptyString.UnwrapOr("henlo"))
+		assert.EqualValues(t, "bye", emptyString.UnwrapOr("bye"))
 	})
 }
 
@@ -154,7 +155,7 @@ func TestString_UnwrapOrElse(t *testing.T) {
 
 		someString := option.SomeString("hello")
 		assert.EqualValues(t, "hello", someString.UnwrapOrElse(func() string {
-			return "henlo"
+			return "bye"
 		}))
 	})
 
@@ -162,8 +163,8 @@ func TestString_UnwrapOrElse(t *testing.T) {
 		t.Parallel()
 
 		emptyString := option.NoneString()
-		assert.EqualValues(t, "henlo", emptyString.UnwrapOrElse(func() string {
-			return "henlo"
+		assert.EqualValues(t, "bye", emptyString.UnwrapOrElse(func() string {
+			return "bye"
 		}))
 	})
 }
@@ -208,4 +209,115 @@ func TestString_EncodeDecodeMsgpack(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, unmarshaled.IsSome())
 	})
+}
+
+func ExampleSomeString() {
+	opt := option.SomeString("hello")
+	if opt.IsSome() {
+		fmt.Println(opt.Unwrap())
+	}
+	// Output: hello
+}
+
+func ExampleNoneString() {
+	opt := option.NoneString()
+	if opt.IsZero() {
+		fmt.Println("value is absent")
+	}
+	// Output: value is absent
+}
+
+func ExampleString_IsSome() {
+	some := option.SomeString("hello")
+	none := option.NoneString()
+	fmt.Println(some.IsSome())
+	fmt.Println(none.IsSome())
+	// Output:
+	// true
+	// false
+}
+
+func ExampleString_IsZero() {
+	some := option.SomeString("hello")
+	none := option.NoneString()
+	fmt.Println(some.IsZero())
+	fmt.Println(none.IsZero())
+	// Output:
+	// false
+	// true
+}
+
+func ExampleString_IsNil() {
+	some := option.SomeString("hello")
+	none := option.NoneString()
+	fmt.Println(some.IsNil() == some.IsZero())
+	fmt.Println(none.IsNil() == none.IsZero())
+	// Output:
+	// true
+	// true
+}
+
+func ExampleString_Get() {
+	some := option.SomeString("hello")
+	none := option.NoneString()
+	val, ok := some.Get()
+	fmt.Println(val, ok)
+	val, ok = none.Get()
+	fmt.Println(val, ok)
+	// Output:
+	// hello true
+	//  false
+}
+
+func ExampleString_MustGet() {
+	some := option.SomeString("hello")
+	fmt.Println(some.MustGet())
+	// Output: hello
+}
+
+func ExampleString_MustGet_panic() {
+	none := option.NoneString()
+	eof := false
+	defer func() {
+		if !eof {
+			fmt.Println("panic!", recover())
+		}
+	}()
+	fmt.Println(none.MustGet())
+	eof = true
+	// Output: panic! optional value is not set
+}
+
+func ExampleString_Unwrap() {
+	some := option.SomeString("hello")
+	none := option.NoneString()
+	fmt.Println(some.Unwrap())
+	fmt.Println(none.Unwrap())
+	// Output:
+	// hello
+	//
+}
+
+func ExampleString_UnwrapOr() {
+	some := option.SomeString("hello")
+	none := option.NoneString()
+	fmt.Println(some.UnwrapOr("bye"))
+	fmt.Println(none.UnwrapOr("bye"))
+	// Output:
+	// hello
+	// bye
+}
+
+func ExampleString_UnwrapOrElse() {
+	some := option.SomeString("hello")
+	none := option.NoneString()
+	fmt.Println(some.UnwrapOrElse(func() string {
+		return "bye"
+	}))
+	fmt.Println(none.UnwrapOrElse(func() string {
+		return "bye"
+	}))
+	// Output:
+	// hello
+	// bye
 }

@@ -240,12 +240,13 @@ For example, to generate an optional type for `github.com/google/uuid.UUID`:
 
 ### Using Generated Types
 
-Generated types follow the pattern Optional<TypeName> and provide methods for working
-with optional values:
+Generated types provide methods for working with optional values and 2 constructors for every single type:
+`Some<TypeName>` creates option with some value and `None<TypeName>` creates the empty one
+(<TypeName> is the original type name started with upper case):
 
 ```go
 // Create an optional with a value.
-opt := SomeOptionalString("hello")
+opt := option.SomeString("hello")
 
 // Check if a value is present.
 if opt.IsSome() {
@@ -255,6 +256,30 @@ if opt.IsSome() {
 
 // Use a default value if none.
 value := opt.UnwrapOr("default")
+
+// Encode to MessagePack.
+err := opt.EncodeMsgpack(encoder)
+```
+
+### Using Generic approach
+
+```go
+type SomeType struct {
+    name string
+    number int
+}
+
+// Create an optional with a value.
+opt := option.Some(SomeType{"hello", 42})
+
+// Check if a value is present.
+if opt.IsSome() {
+    value := opt.Unwrap()
+    fmt.Println(value)
+}
+
+// Use a default value if none.
+value := opt.UnwrapOr(SomeType{"default", 0})
 
 // Encode to MessagePack.
 err := opt.EncodeMsgpack(encoder)
@@ -329,7 +354,7 @@ At this point we can see already that the alternatives (based on pointer and sli
 
 Now let's check encoding and decoding.
 
-## Encode + Decode
+#### Encode + Decode
 
 ```
 # int

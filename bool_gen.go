@@ -18,13 +18,6 @@ var _ commonInterface[bool] = (*Bool)(nil)
 
 // SomeBool creates an optional Bool with the given bool value.
 // The returned Bool will have IsSome() == true and IsZero() == false.
-//
-// Example:
-//
-//	o := SomeBool(true)
-//	if o.IsSome() {
-//	    v := o.Unwrap() // v == true
-//	}
 func SomeBool(value bool) Bool {
 	return Bool{
 		value:  value,
@@ -34,13 +27,6 @@ func SomeBool(value bool) Bool {
 
 // NoneBool creates an empty optional Bool value.
 // The returned Bool will have IsSome() == false and IsZero() == true.
-//
-// Example:
-//
-//	o := NoneBool()
-//	if o.IsZero() {
-//	    fmt.Println("value is absent")
-//	}
 func NoneBool() Bool {
 	return Bool{
 		exists: false,
@@ -106,11 +92,6 @@ func (o Bool) Unwrap() bool {
 
 // UnwrapOr returns the stored value if present.
 // Otherwise, returns the provided default value.
-//
-// Example:
-//
-//	o := NoneBool()
-//	v := o.UnwrapOr(someDefaultBool)
 func (o Bool) UnwrapOr(defaultValue bool) bool {
 	if o.exists {
 		return o.value
@@ -122,11 +103,6 @@ func (o Bool) UnwrapOr(defaultValue bool) bool {
 // UnwrapOrElse returns the stored value if present.
 // Otherwise, calls the provided function and returns its result.
 // Useful when the default value requires computation or side effects.
-//
-// Example:
-//
-//	o := NoneBool()
-//	v := o.UnwrapOrElse(func() bool { return computeDefault() })
 func (o Bool) UnwrapOrElse(defaultValue func() bool) bool {
 	if o.exists {
 		return o.value

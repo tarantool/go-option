@@ -18,13 +18,6 @@ var _ commonInterface[float64] = (*Float64)(nil)
 
 // SomeFloat64 creates an optional Float64 with the given float64 value.
 // The returned Float64 will have IsSome() == true and IsZero() == false.
-//
-// Example:
-//
-//	o := SomeFloat64(12)
-//	if o.IsSome() {
-//	    v := o.Unwrap() // v == 12
-//	}
 func SomeFloat64(value float64) Float64 {
 	return Float64{
 		value:  value,
@@ -34,13 +27,6 @@ func SomeFloat64(value float64) Float64 {
 
 // NoneFloat64 creates an empty optional Float64 value.
 // The returned Float64 will have IsSome() == false and IsZero() == true.
-//
-// Example:
-//
-//	o := NoneFloat64()
-//	if o.IsZero() {
-//	    fmt.Println("value is absent")
-//	}
 func NoneFloat64() Float64 {
 	return Float64{
 		exists: false,
@@ -106,11 +92,6 @@ func (o Float64) Unwrap() float64 {
 
 // UnwrapOr returns the stored value if present.
 // Otherwise, returns the provided default value.
-//
-// Example:
-//
-//	o := NoneFloat64()
-//	v := o.UnwrapOr(someDefaultFloat64)
 func (o Float64) UnwrapOr(defaultValue float64) float64 {
 	if o.exists {
 		return o.value
@@ -122,11 +103,6 @@ func (o Float64) UnwrapOr(defaultValue float64) float64 {
 // UnwrapOrElse returns the stored value if present.
 // Otherwise, calls the provided function and returns its result.
 // Useful when the default value requires computation or side effects.
-//
-// Example:
-//
-//	o := NoneFloat64()
-//	v := o.UnwrapOrElse(func() float64 { return computeDefault() })
 func (o Float64) UnwrapOrElse(defaultValue func() float64) float64 {
 	if o.exists {
 		return o.value
