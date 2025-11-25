@@ -10,7 +10,13 @@ Versioning](http://semver.org/spec/v2.0.0.html) except to the first release.
 
 ### Added
 
+- The Any type added as an alias on interface{} in the library style.
+- The encode methods created for Any to work in MessagePack.
+- Tests added for Any.
+
 ### Changed
+
+- Corrections made like interface{} -> any as required by the linter.
 
 ### Fixed
 

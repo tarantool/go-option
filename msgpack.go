@@ -167,3 +167,14 @@ func decodeByte(decoder *msgpack.Decoder) (byte, error) {
 func encodeByte(encoder *msgpack.Encoder, b byte) error {
 	return encoder.EncodeUint8(b) //nolint:wrapcheck
 }
+
+func checkAny(code byte) bool {
+	return code != msgpcode.Nil
+}
+func encodeAny(encoder *msgpack.Encoder, val any) error {
+	return encoder.Encode(val) //nolint:wrapcheck
+}
+
+func decodeAny(decoder *msgpack.Decoder) (any, error) {
+	return decoder.DecodeInterfaceLoose() //nolint:wrapcheck
+}

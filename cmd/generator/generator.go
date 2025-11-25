@@ -34,10 +34,10 @@ type generatorDef struct {
 	UnexpectedTestingValue string
 }
 
-func structToMap(def generatorDef) map[string]interface{} {
+func structToMap(def generatorDef) map[string]any {
 	caser := cases.Title(language.English)
 
-	out := map[string]interface{}{
+	out := map[string]any{
 		"Name":        caser.String(def.Name),
 		"Type":        def.Name,
 		"DecodeFunc":  def.DecodeFunc,

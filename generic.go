@@ -161,7 +161,7 @@ func (o Generic[T]) UnwrapOrElse(defaultValueFunc func() T) T {
 // convertToEncoder checks whether the given value implements msgpack.CustomEncoder.
 //
 // Used internally during encoding to support custom MessagePack encoding logic.
-func convertToEncoder(v interface{}) (msgpack.CustomEncoder, bool) {
+func convertToEncoder(v any) (msgpack.CustomEncoder, bool) {
 	enc, ok := v.(msgpack.CustomEncoder)
 	return enc, ok
 }
@@ -196,7 +196,7 @@ func (o Generic[T]) EncodeMsgpack(encoder *msgpack.Encoder) error {
 // convertToDecoder checks whether the given value implements msgpack.CustomDecoder.
 //
 // Used internally during decoding to support custom MessagePack decoding logic.
-func convertToDecoder(v interface{}) (msgpack.CustomDecoder, bool) {
+func convertToDecoder(v any) (msgpack.CustomDecoder, bool) {
 	dec, ok := v.(msgpack.CustomDecoder)
 	return dec, ok
 }
