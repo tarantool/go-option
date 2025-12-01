@@ -10,15 +10,17 @@ Versioning](http://semver.org/spec/v2.0.0.html) except to the first release.
 
 ### Added
 
-- The Any type added as an alias on interface{} in the library style.
-- The encode methods created for Any to work in MessagePack.
-- Tests added for Any.
-
 ### Changed
 
-- Corrections made like interface{} -> any as required by the linter.
-
 ### Fixed
+
+## [v1.1.0] - 2025-12-02
+
+The release introduces the `option.Any` type.
+
+### Added
+
+- The `option.Any` type is a wrapper for the `any` type (#14).
 
 ## [v1.0.0] - 2025-09-09
 
