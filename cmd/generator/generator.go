@@ -1,4 +1,3 @@
-//nolint:exhaustruct
 package main
 
 import (
@@ -31,8 +30,9 @@ type generatorDef struct {
 	EncoderFunc string
 	CheckerFunc string
 
-	TestingValue                 string
-	TestingValueOutput           string
+	TestingValues                []string
+	TestingValueOutputs          []string
+	ExampleValueOutputs          []string
 	UnexpectedTestingValue       string
 	UnexpectedTestingValueOutput string
 	ZeroTestingValueOutput       string
@@ -41,6 +41,10 @@ type generatorDef struct {
 func structToMap(def generatorDef) map[string]any {
 	caser := cases.Title(language.English)
 
+	// Using first value for test.
+	testingValue := def.TestingValues[0]
+	testingValueOutput := def.TestingValueOutputs[0]
+
 	out := map[string]any{
 		"Name":        caser.String(def.Name),
 		"Type":        def.Name,
@@ -48,19 +52,20 @@ func structToMap(def generatorDef) map[string]any {
 		"EncoderFunc": def.EncoderFunc,
 		"CheckerFunc": def.CheckerFunc,
 
-		"TestingValue":                 def.TestingValue,
-		"TestingValueOutput":           def.TestingValue,
+		"TestingValue":                 testingValue,
+		"TestingValueOutput":           testingValueOutput,
 		"UnexpectedTestingValue":       def.UnexpectedTestingValue,
-		"UnexpectedTestingValueOutput": def.UnexpectedTestingValue,
+		"UnexpectedTestingValueOutput": def.UnexpectedTestingValueOutput,
 		"ZeroTestingValueOutput":       def.ZeroTestingValueOutput,
+		"ExampleValueOutput":           def.ExampleValueOutputs[0],
+
+		// Adding arrays for EncodeDecodeMsgpack tests.
+		"TestingValues":       def.TestingValues,
+		"TestingValueOutputs": def.TestingValueOutputs,
 	}
 
 	if def.Type != "" {
 		out["Type"] = def.Type
-	}
-
-	if def.TestingValueOutput != "" {
-		out["TestingValueOutput"] = def.TestingValueOutput
 	}
 
 	if def.UnexpectedTestingValueOutput != "" {
@@ -84,9 +89,12 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeByte",
 		CheckerFunc: "checkNumber",
 
-		TestingValue:           "12",
-		UnexpectedTestingValue: "13",
-		ZeroTestingValueOutput: zeroOutput[byte](),
+		TestingValues:                []string{"12"},
+		TestingValueOutputs:          []string{"12"},
+		ExampleValueOutputs:          []string{"12"},
+		UnexpectedTestingValue:       "13",
+		UnexpectedTestingValueOutput: "13",
+		ZeroTestingValueOutput:       zeroOutput[byte](),
 	},
 	{
 		Name:        "int",
@@ -95,9 +103,12 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeInt",
 		CheckerFunc: "checkNumber",
 
-		TestingValue:           "12",
-		UnexpectedTestingValue: "13",
-		ZeroTestingValueOutput: zeroOutput[int](),
+		TestingValues:                []string{"12"},
+		TestingValueOutputs:          []string{"12"},
+		ExampleValueOutputs:          []string{"12"},
+		UnexpectedTestingValue:       "13",
+		UnexpectedTestingValueOutput: "13",
+		ZeroTestingValueOutput:       zeroOutput[int](),
 	},
 	{
 		Name:        "int8",
@@ -106,9 +117,12 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeInt8",
 		CheckerFunc: "checkNumber",
 
-		TestingValue:           "12",
-		UnexpectedTestingValue: "13",
-		ZeroTestingValueOutput: zeroOutput[int8](),
+		TestingValues:                []string{"12"},
+		TestingValueOutputs:          []string{"12"},
+		ExampleValueOutputs:          []string{"12"},
+		UnexpectedTestingValue:       "13",
+		UnexpectedTestingValueOutput: "13",
+		ZeroTestingValueOutput:       zeroOutput[int8](),
 	},
 	{
 		Name:        "int16",
@@ -117,9 +131,12 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeInt16",
 		CheckerFunc: "checkNumber",
 
-		TestingValue:           "12",
-		UnexpectedTestingValue: "13",
-		ZeroTestingValueOutput: zeroOutput[int16](),
+		TestingValues:                []string{"12"},
+		TestingValueOutputs:          []string{"12"},
+		ExampleValueOutputs:          []string{"12"},
+		UnexpectedTestingValue:       "13",
+		UnexpectedTestingValueOutput: "13",
+		ZeroTestingValueOutput:       zeroOutput[int16](),
 	},
 	{
 		Name:        "int32",
@@ -128,9 +145,12 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeInt32",
 		CheckerFunc: "checkNumber",
 
-		TestingValue:           "12",
-		UnexpectedTestingValue: "13",
-		ZeroTestingValueOutput: zeroOutput[int32](),
+		TestingValues:                []string{"12"},
+		TestingValueOutputs:          []string{"12"},
+		ExampleValueOutputs:          []string{"12"},
+		UnexpectedTestingValue:       "13",
+		UnexpectedTestingValueOutput: "13",
+		ZeroTestingValueOutput:       zeroOutput[int32](),
 	},
 	{
 		Name:        "int64",
@@ -139,9 +159,12 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeInt64",
 		CheckerFunc: "checkNumber",
 
-		TestingValue:           "12",
-		UnexpectedTestingValue: "13",
-		ZeroTestingValueOutput: zeroOutput[int64](),
+		TestingValues:                []string{"12"},
+		TestingValueOutputs:          []string{"12"},
+		ExampleValueOutputs:          []string{"12"},
+		UnexpectedTestingValue:       "13",
+		UnexpectedTestingValueOutput: "13",
+		ZeroTestingValueOutput:       zeroOutput[int64](),
 	},
 	{
 		Name:        "uint",
@@ -150,9 +173,12 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeUint",
 		CheckerFunc: "checkNumber",
 
-		TestingValue:           "12",
-		UnexpectedTestingValue: "13",
-		ZeroTestingValueOutput: zeroOutput[uint](),
+		TestingValues:                []string{"12"},
+		TestingValueOutputs:          []string{"12"},
+		ExampleValueOutputs:          []string{"12"},
+		UnexpectedTestingValue:       "13",
+		UnexpectedTestingValueOutput: "13",
+		ZeroTestingValueOutput:       zeroOutput[uint](),
 	},
 	{
 		Name:        "uint8",
@@ -161,9 +187,12 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeUint8",
 		CheckerFunc: "checkNumber",
 
-		TestingValue:           "12",
-		UnexpectedTestingValue: "13",
-		ZeroTestingValueOutput: zeroOutput[uint8](),
+		TestingValues:                []string{"12"},
+		TestingValueOutputs:          []string{"12"},
+		ExampleValueOutputs:          []string{"12"},
+		UnexpectedTestingValue:       "13",
+		UnexpectedTestingValueOutput: "13",
+		ZeroTestingValueOutput:       zeroOutput[uint8](),
 	},
 	{
 		Name:        "uint16",
@@ -172,9 +201,12 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeUint16",
 		CheckerFunc: "checkNumber",
 
-		TestingValue:           "12",
-		UnexpectedTestingValue: "13",
-		ZeroTestingValueOutput: zeroOutput[uint16](),
+		TestingValues:                []string{"12"},
+		TestingValueOutputs:          []string{"12"},
+		ExampleValueOutputs:          []string{"12"},
+		UnexpectedTestingValue:       "13",
+		UnexpectedTestingValueOutput: "13",
+		ZeroTestingValueOutput:       zeroOutput[uint16](),
 	},
 	{
 		Name:        "uint32",
@@ -183,9 +215,12 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeUint32",
 		CheckerFunc: "checkNumber",
 
-		TestingValue:           "12",
-		UnexpectedTestingValue: "13",
-		ZeroTestingValueOutput: zeroOutput[uint32](),
+		TestingValues:                []string{"12"},
+		TestingValueOutputs:          []string{"12"},
+		ExampleValueOutputs:          []string{"12"},
+		UnexpectedTestingValue:       "13",
+		UnexpectedTestingValueOutput: "13",
+		ZeroTestingValueOutput:       zeroOutput[uint32](),
 	},
 	{
 		Name:        "uint64",
@@ -194,9 +229,12 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeUint64",
 		CheckerFunc: "checkNumber",
 
-		TestingValue:           "12",
-		UnexpectedTestingValue: "13",
-		ZeroTestingValueOutput: zeroOutput[uint64](),
+		TestingValues:                []string{"12"},
+		TestingValueOutputs:          []string{"12"},
+		ExampleValueOutputs:          []string{"12"},
+		UnexpectedTestingValue:       "13",
+		UnexpectedTestingValueOutput: "13",
+		ZeroTestingValueOutput:       zeroOutput[uint64](),
 	},
 	{
 		Name:        "float32",
@@ -205,9 +243,12 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeFloat32",
 		CheckerFunc: "checkFloat",
 
-		TestingValue:           "12",
-		UnexpectedTestingValue: "13",
-		ZeroTestingValueOutput: zeroOutput[float32](),
+		TestingValues:                []string{"12"},
+		TestingValueOutputs:          []string{"12"},
+		ExampleValueOutputs:          []string{"12"},
+		UnexpectedTestingValue:       "13",
+		UnexpectedTestingValueOutput: "13",
+		ZeroTestingValueOutput:       zeroOutput[float32](),
 	},
 	{
 		Name:        "float64",
@@ -216,9 +257,12 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeFloat64",
 		CheckerFunc: "checkFloat",
 
-		TestingValue:           "12",
-		UnexpectedTestingValue: "13",
-		ZeroTestingValueOutput: zeroOutput[float64](),
+		TestingValues:                []string{"12"},
+		TestingValueOutputs:          []string{"12"},
+		ExampleValueOutputs:          []string{"12"},
+		UnexpectedTestingValue:       "13",
+		UnexpectedTestingValueOutput: "13",
+		ZeroTestingValueOutput:       zeroOutput[float64](),
 	},
 	{
 		Name:        "string",
@@ -227,8 +271,9 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeString",
 		CheckerFunc: "checkString",
 
-		TestingValue:                 "\"hello\"",
-		TestingValueOutput:           "hello",
+		TestingValues:                []string{"\"hello\""},
+		TestingValueOutputs:          []string{"\"hello\""},
+		ExampleValueOutputs:          []string{"hello"},
 		UnexpectedTestingValue:       "\"bye\"",
 		UnexpectedTestingValueOutput: "bye",
 		ZeroTestingValueOutput:       zeroOutput[string](),
@@ -240,8 +285,9 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeBytes",
 		CheckerFunc: "checkBytes",
 
-		TestingValue:                 "[]byte{3, 14, 15}",
-		TestingValueOutput:           "[3 14 15]",
+		TestingValues:                []string{"[]byte{3, 14, 15}"},
+		TestingValueOutputs:          []string{"[]byte{3, 14, 15}"},
+		ExampleValueOutputs:          []string{"[3 14 15]"},
 		UnexpectedTestingValue:       "[]byte{3, 14, 15, 9, 26}",
 		UnexpectedTestingValueOutput: "[3 14 15 9 26]",
 		ZeroTestingValueOutput:       zeroOutput[[]byte](),
@@ -253,9 +299,26 @@ var defaultTypes = []generatorDef{
 		EncoderFunc: "encodeBool",
 		CheckerFunc: "checkBool",
 
-		TestingValue:           "true",
-		UnexpectedTestingValue: "false",
-		ZeroTestingValueOutput: zeroOutput[bool](),
+		TestingValues:                []string{"true"},
+		TestingValueOutputs:          []string{"true"},
+		ExampleValueOutputs:          []string{"true"},
+		UnexpectedTestingValue:       "false",
+		UnexpectedTestingValueOutput: "false",
+		ZeroTestingValueOutput:       zeroOutput[bool](),
+	},
+	{
+		Name:        "any",
+		Type:        "any",
+		DecodeFunc:  "decodeAny",
+		EncoderFunc: "encodeAny",
+		CheckerFunc: "checkAny",
+
+		TestingValues:                []string{"\"hello\"", "123", "true", "123.456"},
+		TestingValueOutputs:          []string{"\"hello\"", "123", "true", "123.456"},
+		ExampleValueOutputs:          []string{"hello", "123", "true", "123.456"},
+		UnexpectedTestingValue:       "\"bye\"",
+		UnexpectedTestingValueOutput: "bye",
+		ZeroTestingValueOutput:       zeroOutput[any](),
 	},
 }
 
@@ -603,7 +666,14 @@ func Test{{.Name}}_UnwrapOrElse(t *testing.T) {
 func Test{{.Name}}_EncodeDecodeMsgpack(t *testing.T) {
 	t.Parallel()
 
+	{{ range $i, $value := .TestingValues }}
+
+	{{ if (eq $i 0) }}
 	t.Run("some", func(t *testing.T) {
+	{{ else }}
+	t.Run("some_{{ $i }}", func(t *testing.T) {
+	{{ end -}}
+
 		t.Parallel()
 
 		var buf bytes.Buffer
@@ -611,16 +681,18 @@ func Test{{.Name}}_EncodeDecodeMsgpack(t *testing.T) {
 		enc := msgpack.NewEncoder(&buf)
 		dec := msgpack.NewDecoder(&buf)
 
-		some{{.Name}} := option.Some{{.Name}}({{.TestingValue}})
-		err := some{{.Name}}.EncodeMsgpack(enc)
+		some{{$.Name}} := option.Some{{$.Name}}({{ $value }})
+		err := some{{$.Name}}.EncodeMsgpack(enc)
 		require.NoError(t, err)
 
-		var unmarshaled option.{{.Name}}
+		var unmarshaled option.{{$.Name}}
 		err = unmarshaled.DecodeMsgpack(dec)
 		require.NoError(t, err)
 		assert.True(t, unmarshaled.IsSome())
-		assert.EqualValues(t, {{.TestingValue}}, unmarshaled.Unwrap())
+		{{- $output := index $.TestingValueOutputs $i }}
+		assert.EqualValues(t, {{ $output }}, unmarshaled.Unwrap())
 	})
+	{{ end }}
 
 	t.Run("none", func(t *testing.T) {
 		t.Parallel()
@@ -647,7 +719,7 @@ func ExampleSome{{.Name}}() {
 	if opt.IsSome() {
 		fmt.Println(opt.Unwrap())
 	}
-	// Output: {{.TestingValueOutput}}
+	// Output: {{.ExampleValueOutput}}
 }
 
 func ExampleNone{{.Name}}() {
@@ -696,14 +768,14 @@ func Example{{.Name}}_Get() {
 	val, ok = none.Get()
 	fmt.Println(val, ok)
 	// Output:
-	// {{.TestingValueOutput}} true
+	// {{.ExampleValueOutput}} true
 	// {{.ZeroTestingValueOutput}} false
 }
 
 func Example{{.Name}}_MustGet() {
 	some := option.Some{{.Name}}({{.TestingValue}})
 	fmt.Println(some.MustGet())
-	// Output: {{.TestingValueOutput}}
+	// Output: {{.ExampleValueOutput}}
 }
 
 func Example{{.Name}}_MustGet_panic() {
@@ -725,7 +797,7 @@ func Example{{.Name}}_Unwrap() {
 	fmt.Println(some.Unwrap())
 	fmt.Println(none.Unwrap())
 	// Output:
-	// {{.TestingValueOutput}}
+	// {{.ExampleValueOutput}}
 	// {{.ZeroTestingValueOutput}}
 }
 
@@ -735,7 +807,7 @@ func Example{{.Name}}_UnwrapOr() {
 	fmt.Println(some.UnwrapOr({{.UnexpectedTestingValue}}))
 	fmt.Println(none.UnwrapOr({{.UnexpectedTestingValue}}))
 	// Output:
-	// {{.TestingValueOutput}}
+	// {{.ExampleValueOutput}}
 	// {{.UnexpectedTestingValueOutput}}
 }
 
@@ -749,7 +821,7 @@ func Example{{.Name}}_UnwrapOrElse() {
 		return {{.UnexpectedTestingValue}}
 	}))
 	// Output:
-	// {{.TestingValueOutput}}
+	// {{.ExampleValueOutput}}
 	// {{.UnexpectedTestingValueOutput}}
 }
 `
