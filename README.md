@@ -24,6 +24,8 @@ high performance due to:
 * [Quick start](#quick-start)
   * [Using pre-generated optional types](#using-pre-generated-optional-types)
   * [Usage with go-tarantool](#usage-with-go-tarantool)
+  * [Encoding to JSON](#encoding-to-json)
+  * [Encoding to YAML](#encoding-to-yaml)
 * [Gentype Utility](#gentype-utility)
   * [Overview](#overview)
   * [Features](#features)
@@ -150,6 +152,71 @@ func main() {
 }
 ```
 
+### Encoding to JSON
+
+Every optional type — the builtin ones, `option.Generic[T]` and the ones
+produced by `gentypes` — implements `json.Marshaler` and `json.Unmarshaler`:
+
+- an absent value (None) is encoded as `null`, and `null` decodes as None;
+- a present value (Some) is encoded exactly as `json.Marshal` encodes the
+  wrapped value, taken by pointer, so `MarshalJSON` and `MarshalText`
+  methods with a pointer receiver are honoured. A present zero value stays
+  distinct from None: `option.SomeInt(0)` is `0`, not `null`.
+
+A present value whose own JSON is `null` (a nil slice, map, pointer or
+interface) is encoded as `null` as well, so it decodes back as None.
+
+Use the `omitzero` tag option (Go 1.24+) to drop absent values from the
+output: it calls `IsZero()`, which reports absence. `omitempty` has no
+effect on optional types, since they are structs.
+
+```go
+type User struct {
+    Name  string        `json:"name"`
+    Phone option.String `json:"phone"`
+    Email option.String `json:"email,omitzero"`
+}
+
+data, _ := json.Marshal(User{Name: "Maryamu Efe"})
+// {"name":"Maryamu Efe","phone":null}
+```
+
+Optional types implement no `MarshalText`: there is no text for an absent
+value that differs from a present empty one.
+
+### Encoding to YAML
+
+Every optional type also implements `MarshalYAML() (any, error)` and
+`UnmarshalYAML(func(any) error) error` — the interfaces
+`gopkg.in/yaml.v3` (and `yaml.v2`) accept without the package being
+imported, so `go-option` does not depend on any YAML library:
+
+- an absent value (None) is encoded as `null`;
+- a present value (Some) is handed to the encoder as a pointer to the
+  wrapped value, so it is encoded exactly as that value, and
+  `MarshalYAML` and `MarshalText` methods with a pointer receiver are
+  honoured. `option.SomeInt(0)` is `0`, not `null`.
+
+The `omitempty` YAML tag option drops absent values: `yaml.v3` consults
+`IsZero()`, which reports absence.
+
+`yaml.v3` never calls `UnmarshalYAML` for a null node (`null`, `~` or an
+empty value) and leaves the target unchanged. Decoding `null` into a zero
+optional (a fresh variable, a field of a fresh struct) yields None, but
+decoding it into an optional that already holds a value keeps the value.
+
+```go
+type User struct {
+    Name  string        `yaml:"name"`
+    Phone option.String `yaml:"phone"`
+    Email option.String `yaml:"email,omitempty"`
+}
+
+data, _ := yaml.Marshal(User{Name: "Maryamu Efe"})
+// name: Maryamu Efe
+// phone: null
+```
+
 ## Gentype Utility
 
 A Go code generator for creating optional types with MessagePack
@@ -173,6 +240,10 @@ while ensuring proper encoding and decoding when using MessagePack.
     - `Unwrap()`, `UnwrapOr()`, `UnwrapOrElse()` - Value extraction
     - `IsSome()`, `IsNil()` - Presence checking
 - Full MessagePack `CustomEncoder` and `CustomDecoder` implementation
+- JSON `Marshaler` and `Unmarshaler` implementation (see
+  [Encoding to JSON](#encoding-to-json))
+- YAML marshalling without a YAML dependency (see
+  [Encoding to YAML](#encoding-to-yaml))
 - Type-safe operations
 
 ### Gentype installation
