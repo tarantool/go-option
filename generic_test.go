@@ -1,7 +1,10 @@
 package option_test
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -302,4 +305,201 @@ func TestUnwrapOrElseLazyEvaluation(t *testing.T) {
 
 	assert.Equal(t, 10, result)
 	assert.False(t, called, "default function should not be called when value exists")
+}
+
+var errMissingTextPrefix = errors.New("missing text: prefix")
+
+// pointerTextType implements text marshalling with pointer receivers only,
+// so json.Marshal honours it only when given an addressable value.
+type pointerTextType struct {
+	Value string
+}
+
+func (p *pointerTextType) MarshalText() ([]byte, error) {
+	return []byte("text:" + p.Value), nil
+}
+
+func (p *pointerTextType) UnmarshalText(text []byte) error {
+	value, ok := strings.CutPrefix(string(text), "text:")
+	if !ok {
+		return errMissingTextPrefix
+	}
+
+	p.Value = value
+
+	return nil
+}
+
+func TestGeneric_MarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		value    any
+		expected string
+	}{
+		{"some", option.Some(42), `42`},
+		{"some_zero", option.Some(0), `0`},
+		{"some_empty_string", option.Some(""), `""`},
+		{"some_struct", option.Some(CustomType{Value: "x"}), `{"Value":"x"}`},
+		{"some_pointer_receiver", option.Some(pointerTextType{Value: "x"}), `"text:x"`},
+		{"some_nil_pointer", option.Some[*int](nil), `null`},
+		{"none", option.None[int](), `null`},
+		{"none_struct", option.None[CustomType](), `null`},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			data, err := json.Marshal(testCase.value)
+			require.NoError(t, err)
+			assert.Equal(t, testCase.expected, string(data))
+		})
+	}
+}
+
+func TestGeneric_MarshalJSON_StructField(t *testing.T) {
+	t.Parallel()
+
+	type wrapper struct {
+		Some    option.Generic[int] `json:"some"`
+		None    option.Generic[int] `json:"none"`
+		Omitted option.Generic[int] `json:"omitted,omitzero"`
+		Zero    option.Generic[int] `json:"zero,omitzero"`
+	}
+
+	data, err := json.Marshal(wrapper{
+		Some:    option.Some(12),
+		None:    option.None[int](),
+		Omitted: option.None[int](),
+		Zero:    option.Some(0),
+	})
+	require.NoError(t, err)
+	assert.Equal(t, `{"some":12,"none":null,"zero":0}`, string(data))
+}
+
+func TestGeneric_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("some", func(t *testing.T) {
+		t.Parallel()
+
+		var opt option.Generic[int]
+
+		require.NoError(t, json.Unmarshal([]byte(`42`), &opt))
+		require.True(t, opt.IsSome())
+		assert.Equal(t, 42, opt.Unwrap())
+	})
+
+	t.Run("some_zero", func(t *testing.T) {
+		t.Parallel()
+
+		var opt option.Generic[int]
+
+		require.NoError(t, json.Unmarshal([]byte(`0`), &opt))
+		require.True(t, opt.IsSome())
+		assert.Equal(t, 0, opt.Unwrap())
+	})
+
+	t.Run("some_pointer_receiver", func(t *testing.T) {
+		t.Parallel()
+
+		var opt option.Generic[pointerTextType]
+
+		require.NoError(t, json.Unmarshal([]byte(`"text:x"`), &opt))
+		require.True(t, opt.IsSome())
+		assert.Equal(t, pointerTextType{Value: "x"}, opt.Unwrap())
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.Some(42)
+		err := opt.UnmarshalJSON([]byte(`"x"`))
+
+		var typeErr *json.UnmarshalTypeError
+
+		require.ErrorAs(t, err, &typeErr)
+		assert.Equal(t, option.Some(42), opt)
+	})
+}
+
+func TestGeneric_UnmarshalJSON_Null(t *testing.T) {
+	t.Parallel()
+
+	t.Run("none", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.Some(42)
+		require.NoError(t, json.Unmarshal([]byte(`null`), &opt))
+		assert.False(t, opt.IsSome())
+		assert.Zero(t, opt.Unwrap())
+	})
+
+	t.Run("none_with_spaces", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.Some(42)
+		require.NoError(t, opt.UnmarshalJSON([]byte(" null\n")))
+		assert.False(t, opt.IsSome())
+	})
+
+	t.Run("struct_field", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Some   option.Generic[int] `json:"some"`
+			None   option.Generic[int] `json:"none"`
+			Absent option.Generic[int] `json:"absent"`
+		}
+
+		var out wrapper
+
+		require.NoError(t, json.Unmarshal([]byte(`{"some":12,"none":null}`), &out))
+		assert.Equal(t, option.Some(12), out.Some)
+		assert.False(t, out.None.IsSome())
+		assert.False(t, out.Absent.IsSome())
+	})
+}
+
+func TestGeneric_JSONRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	for _, original := range []option.Generic[string]{
+		option.Some("hello"),
+		option.Some(""),
+		option.None[string](),
+	} {
+		data, err := json.Marshal(original)
+		require.NoError(t, err)
+
+		var decoded option.Generic[string]
+
+		require.NoError(t, json.Unmarshal(data, &decoded))
+		assert.Equal(t, original, decoded)
+	}
+}
+
+func ExampleGeneric_MarshalJSON() {
+	type user struct {
+		Name  string                 `json:"name"`
+		Phone option.Generic[string] `json:"phone"`
+		Email option.Generic[string] `json:"email,omitzero"`
+	}
+
+	data, err := json.Marshal(user{
+		Name:  "Maryamu Efe",
+		Phone: option.None[string](),
+		Email: option.None[string](),
+	})
+	if err != nil {
+		fmt.Println("error:", err)
+
+		return
+	}
+
+	fmt.Println(string(data))
+
+	// Output: {"name":"Maryamu Efe","phone":null}
 }
