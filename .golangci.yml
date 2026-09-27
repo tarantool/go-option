@@ -25,6 +25,7 @@ linters:
         linters:
           - forbidigo        # fmt functions are not forbidden here.
           - gochecknoglobals # global variables are not forbidden here.
+          - goconst          # the type table repeats testing values on purpose.
       - path: cmd/gentypes/
         linters:
           - forbidigo        # fmt functions are not forbidden here.
@@ -32,6 +33,7 @@ linters:
       - path: _test.go
         linters:
           - wrapcheck
+          - goconst # testing values read better inline than as constants.
 
   settings:
     godot:

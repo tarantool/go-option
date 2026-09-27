@@ -41,7 +41,9 @@ func Some[T any](value T) Generic[T] {
 //
 // The returned Generic is in the "none" state, meaning IsZero() will return true.
 func None[T any]() Generic[T] {
-	return Generic[T]{exists: false} //nolint:exhaustruct
+	var zero T
+
+	return Generic[T]{value: zero, exists: false}
 }
 
 // IsSome returns true if the optional contains a value.
@@ -141,6 +143,7 @@ func (o Generic[T]) EncodeMsgpack(encoder *msgpack.Encoder) error {
 	encoderValue, ok := convertToEncoder(&o.value)
 
 	var err error
+
 	if ok {
 		err = encoderValue.EncodeMsgpack(encoder)
 	} else {

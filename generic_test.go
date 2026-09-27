@@ -16,6 +16,7 @@ func ExampleSome() {
 
 	fmt.Println(opt.IsSome())
 	fmt.Println(opt.Unwrap())
+
 	// Output:
 	// true
 	// hello
@@ -26,6 +27,7 @@ func ExampleNone() {
 
 	fmt.Println(opt.IsSome())
 	fmt.Println(opt.Unwrap())
+
 	// Output:
 	// false
 	// 0
@@ -37,6 +39,7 @@ func ExampleGeneric_IsSome() {
 
 	fmt.Println(some.IsSome())
 	fmt.Println(none.IsSome())
+
 	// Output:
 	// true
 	// false
@@ -48,6 +51,7 @@ func ExampleGeneric_IsZero() {
 
 	fmt.Println(some.IsZero())
 	fmt.Println(none.IsZero())
+
 	// Output:
 	// false
 	// true
@@ -59,6 +63,7 @@ func ExampleGeneric_IsNil() {
 
 	fmt.Println(some.IsNil() == some.IsZero())
 	fmt.Println(none.IsNil() == none.IsZero())
+
 	// Output:
 	// true
 	// true
@@ -73,6 +78,7 @@ func ExampleGeneric_Get() {
 
 	val, ok = none.Get()
 	fmt.Println(val, ok)
+
 	// Output:
 	// 12 true
 	// 0 false
@@ -81,6 +87,7 @@ func ExampleGeneric_Get() {
 func ExampleGeneric_MustGet() {
 	some := option.Some(12)
 	fmt.Println(some.MustGet())
+
 	// Output: 12
 }
 
@@ -106,6 +113,7 @@ func ExampleGeneric_Unwrap() {
 
 	fmt.Println(some.Unwrap())
 	fmt.Println(none.Unwrap())
+
 	// Output:
 	// 12
 	// 0
@@ -117,6 +125,7 @@ func ExampleGeneric_UnwrapOr() {
 
 	fmt.Println(some.UnwrapOr(13))
 	fmt.Println(none.UnwrapOr(13))
+
 	// Output:
 	// 12
 	// 13
@@ -132,6 +141,7 @@ func ExampleGeneric_UnwrapOrElse() {
 	fmt.Println(none.UnwrapOrElse(func() int {
 		return 13
 	}))
+
 	// Output:
 	// 12
 	// 13
@@ -142,6 +152,7 @@ func TestZeroValueIsZero(t *testing.T) {
 	t.Parallel()
 
 	var opt option.Generic[string]
+
 	assert.True(t, opt.IsZero())
 	assert.True(t, opt.IsNil())
 	assert.False(t, opt.IsSome())
