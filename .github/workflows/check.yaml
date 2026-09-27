@@ -7,6 +7,7 @@ on:
 env:
   GO_VERSION: 1.25
   CODESPELL_VERSION: v2.4.1
+  GOLANGCI_LINT_VERSION: v2.14.0
 
 jobs:
   golangci-lint:
@@ -25,9 +26,13 @@ jobs:
       - uses: golangci/golangci-lint-action@v8
         name: run golangci-lint with gha format
         continue-on-error: true
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
 
       - uses: golangci/golangci-lint-action@v8
         name: run golangci-lint with human-readable format
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
 
   codespell:
     runs-on: ubuntu-latest
