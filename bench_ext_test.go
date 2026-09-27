@@ -282,6 +282,7 @@ func BenchmarkExtension(b *testing.B) {
 	msgpack.RegisterExt(8, &BenchExt{nil})
 
 	var buf bytes.Buffer
+
 	buf.Grow(4096)
 
 	enc := msgpack.GetEncoder()
