@@ -68,3 +68,4 @@ linters:
             - "github.com/stretchr/testify"
             - "github.com/vmihailenco/msgpack/v5"
             - "github.com/tarantool/go-option"
+            - "gopkg.in/yaml.v3"

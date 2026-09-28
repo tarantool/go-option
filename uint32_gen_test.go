@@ -4,12 +4,15 @@ package option_test
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v5"
+	"gopkg.in/yaml.v3"
 
 	"github.com/tarantool/go-option"
 )
@@ -209,6 +212,338 @@ func TestUint32_EncodeDecodeMsgpack(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, unmarshaled.IsSome())
 	})
+}
+
+func TestUint32_MarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("some", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.SomeUint32(12))
+		require.NoError(t, err)
+		assert.Equal(t, `12`, string(data))
+	})
+
+	t.Run("some_as_inner_0", func(t *testing.T) {
+		t.Parallel()
+
+		expected, err := json.Marshal(uint32(12))
+		require.NoError(t, err)
+
+		data, err := json.Marshal(option.SomeUint32(12))
+		require.NoError(t, err)
+		assert.Equal(t, string(expected), string(data))
+	})
+
+	t.Run("some_zero", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.SomeUint32(0))
+		require.NoError(t, err)
+		assert.Equal(t, `0`, string(data))
+	})
+
+	t.Run("none", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.NoneUint32())
+		require.NoError(t, err)
+		assert.Equal(t, "null", string(data))
+	})
+
+	t.Run("struct_field", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Some option.Uint32 `json:"some"`
+			None option.Uint32 `json:"none"`
+		}
+
+		data, err := json.Marshal(wrapper{
+			Some: option.SomeUint32(12),
+			None: option.NoneUint32(),
+		})
+		require.NoError(t, err)
+		assert.Equal(t, `{"some":12,"none":null}`, string(data))
+	})
+
+	t.Run("omitzero", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Value option.Uint32 `json:"value,omitzero"`
+		}
+
+		data, err := json.Marshal(wrapper{Value: option.NoneUint32()})
+		require.NoError(t, err)
+		assert.Equal(t, "{}", string(data))
+
+		data, err = json.Marshal(wrapper{Value: option.SomeUint32(0)})
+		require.NoError(t, err)
+		assert.Equal(t, `{"value":0}`, string(data))
+	})
+}
+
+func TestUint32_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("some", func(t *testing.T) {
+		t.Parallel()
+
+		var opt option.Uint32
+		require.NoError(t, json.Unmarshal([]byte(`12`), &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, 12, opt.Unwrap())
+	})
+
+	t.Run("roundtrip_0", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.SomeUint32(12))
+		require.NoError(t, err)
+
+		var opt option.Uint32
+		require.NoError(t, json.Unmarshal(data, &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, 12, opt.Unwrap())
+	})
+
+	t.Run("some_zero", func(t *testing.T) {
+		t.Parallel()
+
+		var opt option.Uint32
+		require.NoError(t, json.Unmarshal([]byte(`0`), &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, 0, opt.Unwrap())
+	})
+
+	t.Run("none", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.SomeUint32(12)
+		require.NoError(t, json.Unmarshal([]byte("null"), &opt))
+		assert.False(t, opt.IsSome())
+		assert.Zero(t, opt.Unwrap())
+	})
+
+	t.Run("none_with_spaces", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.SomeUint32(12)
+		require.NoError(t, opt.UnmarshalJSON([]byte(" null\n")))
+		assert.False(t, opt.IsSome())
+	})
+
+	t.Run("struct_field", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Some   option.Uint32 `json:"some"`
+			None   option.Uint32 `json:"none"`
+			Absent option.Uint32 `json:"absent"`
+		}
+
+		var out wrapper
+		err := json.Unmarshal([]byte(`{"some":12,"none":null}`), &out)
+		require.NoError(t, err)
+		require.True(t, out.Some.IsSome())
+		assert.EqualValues(t, 12, out.Some.Unwrap())
+		assert.False(t, out.None.IsSome())
+		assert.False(t, out.Absent.IsSome())
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.SomeUint32(12)
+		err := opt.UnmarshalJSON([]byte("{"))
+
+		var syntaxErr *json.SyntaxError
+		require.ErrorAs(t, err, &syntaxErr)
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, 12, opt.Unwrap())
+	})
+}
+
+func TestUint32_MarshalYAML(t *testing.T) {
+	t.Parallel()
+
+	t.Run("some", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.SomeUint32(12))
+		require.NoError(t, err)
+		assert.Equal(t, "12\n", string(data))
+	})
+
+	t.Run("some_as_inner_0", func(t *testing.T) {
+		t.Parallel()
+
+		expected, err := yaml.Marshal(uint32(12))
+		require.NoError(t, err)
+
+		data, err := yaml.Marshal(option.SomeUint32(12))
+		require.NoError(t, err)
+		assert.Equal(t, string(expected), string(data))
+	})
+
+	t.Run("some_zero", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.SomeUint32(0))
+		require.NoError(t, err)
+		assert.Equal(t, "0\n", string(data))
+	})
+
+	t.Run("none", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.NoneUint32())
+		require.NoError(t, err)
+		assert.Equal(t, "null\n", string(data))
+	})
+
+	t.Run("struct_field", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Some    option.Uint32 `yaml:"some"`
+			None    option.Uint32 `yaml:"none"`
+			Omitted option.Uint32 `yaml:"omitted,omitempty"`
+			Zero    option.Uint32 `yaml:"zero,omitempty"`
+		}
+
+		data, err := yaml.Marshal(wrapper{
+			Some:    option.SomeUint32(12),
+			None:    option.NoneUint32(),
+			Omitted: option.NoneUint32(),
+			Zero:    option.SomeUint32(0),
+		})
+		require.NoError(t, err)
+
+		var fields map[string]any
+		require.NoError(t, yaml.Unmarshal(data, &fields))
+		assert.Contains(t, fields, "some")
+		assert.NotNil(t, fields["some"])
+		assert.Contains(t, fields, "none")
+		assert.Nil(t, fields["none"])
+		assert.NotContains(t, fields, "omitted")
+		assert.Contains(t, fields, "zero")
+		assert.NotNil(t, fields["zero"])
+	})
+}
+
+func TestUint32_UnmarshalYAML(t *testing.T) {
+	t.Parallel()
+
+	t.Run("roundtrip_0", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.SomeUint32(12))
+		require.NoError(t, err)
+
+		var opt option.Uint32
+		require.NoError(t, yaml.Unmarshal(data, &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, 12, opt.Unwrap())
+	})
+
+	t.Run("some_zero", func(t *testing.T) {
+		t.Parallel()
+
+		var opt option.Uint32
+		require.NoError(t, yaml.Unmarshal([]byte("0\n"), &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, 0, opt.Unwrap())
+	})
+
+	t.Run("none_roundtrip", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.NoneUint32())
+		require.NoError(t, err)
+
+		var opt option.Uint32
+		require.NoError(t, yaml.Unmarshal(data, &opt))
+		assert.False(t, opt.IsSome())
+	})
+
+	t.Run("null_node_keeps_present_value", func(t *testing.T) {
+		t.Parallel()
+
+		// gopkg.in/yaml.v3 does not call UnmarshalYAML for a null node.
+		opt := option.SomeUint32(12)
+		require.NoError(t, yaml.Unmarshal([]byte("null"), &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, 12, opt.Unwrap())
+	})
+
+	t.Run("null_by_direct_call", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.SomeUint32(12)
+		err := opt.UnmarshalYAML(func(v any) error {
+			return yaml.Unmarshal([]byte("null"), v)
+		})
+		require.NoError(t, err)
+		assert.False(t, opt.IsSome())
+		assert.Zero(t, opt.Unwrap())
+	})
+
+	t.Run("struct_field", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Some   option.Uint32 `yaml:"some"`
+			Null   option.Uint32 `yaml:"nulled"`
+			Tilde  option.Uint32 `yaml:"tilde"`
+			Empty  option.Uint32 `yaml:"empty"`
+			Absent option.Uint32 `yaml:"absent"`
+		}
+
+		some, err := yaml.Marshal(map[string]any{"some": option.SomeUint32(12)})
+		require.NoError(t, err)
+
+		var out wrapper
+		require.NoError(t, yaml.Unmarshal(append(some, []byte("nulled: null\ntilde: ~\nempty:\n")...), &out))
+		require.True(t, out.Some.IsSome())
+		assert.EqualValues(t, 12, out.Some.Unwrap())
+		assert.False(t, out.Null.IsSome())
+		assert.False(t, out.Tilde.IsSome())
+		assert.False(t, out.Empty.IsSome())
+		assert.False(t, out.Absent.IsSome())
+	})
+
+	t.Run("error", func(t *testing.T) {
+		t.Parallel()
+
+		errUnmarshal := errors.New("unmarshal failed")
+
+		opt := option.SomeUint32(12)
+		err := opt.UnmarshalYAML(func(any) error {
+			return errUnmarshal
+		})
+		require.ErrorIs(t, err, errUnmarshal)
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, 12, opt.Unwrap())
+	})
+}
+
+func ExampleUint32_MarshalJSON() {
+	for _, opt := range []option.Uint32{option.SomeUint32(12), option.NoneUint32()} {
+		data, err := json.Marshal(opt)
+		if err != nil {
+			fmt.Println("error:", err)
+
+			return
+		}
+
+		fmt.Println(string(data))
+	}
+	// Output:
+	// 12
+	// null
 }
 
 func ExampleSomeUint32() {
