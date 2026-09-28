@@ -5,6 +5,8 @@ package test
 import (
 	"github.com/google/uuid"
 
+	"bytes"
+	"encoding/json"
 	"fmt"
 
 	"github.com/vmihailenco/msgpack/v5"
@@ -19,6 +21,11 @@ type OptionalUUID struct {
 	value  uuid.UUID
 	exists bool
 }
+
+var (
+	_ json.Marshaler   = OptionalUUID{}
+	_ json.Unmarshaler = (*OptionalUUID)(nil)
+)
 
 // SomeOptionalUUID creates an optional OptionalUUID with the given uuid.UUID value.
 // The returned OptionalUUID will have IsSome() == true and IsZero() == false.
@@ -240,4 +247,98 @@ func (o *OptionalUUID) DecodeMsgpack(decoder *msgpack.Decoder) error {
 	default:
 		return o.newDecodeError(fmt.Errorf("unexpected code: %d", code))
 	}
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+//   - If the value is present, it is encoded exactly as json.Marshal encodes
+//     a *uuid.UUID, so MarshalJSON and MarshalText methods of uuid.UUID with
+//     a pointer receiver are honoured as well.
+//   - If the value is absent (None), it is encoded as JSON null.
+//
+// A present value that itself encodes as null is encoded as null too,
+// so it decodes back as an absent value.
+//
+// A struct field of type OptionalUUID with the "omitzero" JSON tag option is
+// omitted when the value is absent, since IsZero reports absence.
+// The "omitempty" option has no effect on it.
+func (o OptionalUUID) MarshalJSON() ([]byte, error) {
+	if !o.exists {
+		return []byte("null"), nil
+	}
+
+	return json.Marshal(&o.value)
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+//   - JSON null is decoded as no value (NoneOptionalUUID).
+//   - Any other JSON value is decoded as uuid.UUID and stored as a present value.
+//
+// An error of decoding uuid.UUID is returned unchanged, and the receiver
+// is left intact.
+func (o *OptionalUUID) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(bytes.TrimSpace(data), []byte("null")) {
+		*o = NoneOptionalUUID()
+
+		return nil
+	}
+
+	var value uuid.UUID
+
+	err := json.Unmarshal(data, &value)
+	if err != nil {
+		return err
+	}
+
+	*o = SomeOptionalUUID(value)
+
+	return nil
+}
+
+// MarshalYAML implements the Marshaler interface of gopkg.in/yaml.v3
+// (and yaml.v2) without depending on it.
+//   - If the value is present, it returns a *uuid.UUID, so the value is
+//     encoded exactly as the YAML encoder encodes a *uuid.UUID: MarshalYAML
+//     and MarshalText methods of uuid.UUID with a pointer receiver are
+//     honoured as well.
+//   - If the value is absent (None), it returns nil, which is encoded as null.
+//
+// A struct field of type OptionalUUID with the "omitempty" YAML tag option is
+// omitted when the value is absent, since the encoder consults IsZero.
+func (o OptionalUUID) MarshalYAML() (any, error) {
+	if !o.exists {
+		return nil, nil
+	}
+
+	return &o.value, nil
+}
+
+// UnmarshalYAML implements the obsolete Unmarshaler interface of
+// gopkg.in/yaml.v3 (the only one of yaml.v2) without depending on it.
+//   - A null value is decoded as no value (NoneOptionalUUID).
+//   - Any other value is decoded as uuid.UUID and stored as a present value.
+//
+// gopkg.in/yaml.v3 never calls this method for a null node (null, ~ or an
+// empty value): it leaves the receiver unchanged. Decoding null into a zero
+// OptionalUUID therefore yields None, but decoding it into a present value
+// keeps that value.
+//
+// An error of decoding uuid.UUID is returned unchanged, and the receiver
+// is left intact.
+func (o *OptionalUUID) UnmarshalYAML(unmarshal func(any) error) error {
+	var value *uuid.UUID
+
+	err := unmarshal(&value)
+	if err != nil {
+		return err
+	}
+
+	if value == nil {
+		*o = NoneOptionalUUID()
+
+		return nil
+	}
+
+	*o = SomeOptionalUUID(*value)
+
+	return nil
 }
