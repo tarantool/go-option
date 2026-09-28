@@ -4,12 +4,15 @@ package option_test
 
 import (
 	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v5"
+	"gopkg.in/yaml.v3"
 
 	"github.com/tarantool/go-option"
 )
@@ -209,6 +212,357 @@ func TestBytes_EncodeDecodeMsgpack(t *testing.T) {
 		require.NoError(t, err)
 		assert.False(t, unmarshaled.IsSome())
 	})
+}
+
+func TestBytes_MarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("some", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.SomeBytes([]byte{3, 14, 15}))
+		require.NoError(t, err)
+		assert.Equal(t, `"Aw4P"`, string(data))
+	})
+
+	t.Run("some_as_inner_0", func(t *testing.T) {
+		t.Parallel()
+
+		expected, err := json.Marshal([]byte([]byte{3, 14, 15}))
+		require.NoError(t, err)
+
+		data, err := json.Marshal(option.SomeBytes([]byte{3, 14, 15}))
+		require.NoError(t, err)
+		assert.Equal(t, string(expected), string(data))
+	})
+
+	t.Run("some_zero", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.SomeBytes([]byte{}))
+		require.NoError(t, err)
+		assert.Equal(t, `""`, string(data))
+	})
+
+	t.Run("some_nil", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.SomeBytes(nil))
+		require.NoError(t, err)
+		assert.Equal(t, "null", string(data))
+	})
+
+	t.Run("none", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.NoneBytes())
+		require.NoError(t, err)
+		assert.Equal(t, "null", string(data))
+	})
+
+	t.Run("struct_field", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Some option.Bytes `json:"some"`
+			None option.Bytes `json:"none"`
+		}
+
+		data, err := json.Marshal(wrapper{
+			Some: option.SomeBytes([]byte{3, 14, 15}),
+			None: option.NoneBytes(),
+		})
+		require.NoError(t, err)
+		assert.Equal(t, `{"some":"Aw4P","none":null}`, string(data))
+	})
+
+	t.Run("omitzero", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Value option.Bytes `json:"value,omitzero"`
+		}
+
+		data, err := json.Marshal(wrapper{Value: option.NoneBytes()})
+		require.NoError(t, err)
+		assert.Equal(t, "{}", string(data))
+
+		data, err = json.Marshal(wrapper{Value: option.SomeBytes([]byte{})})
+		require.NoError(t, err)
+		assert.Equal(t, `{"value":""}`, string(data))
+	})
+}
+
+func TestBytes_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("some", func(t *testing.T) {
+		t.Parallel()
+
+		var opt option.Bytes
+		require.NoError(t, json.Unmarshal([]byte(`"Aw4P"`), &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, []byte{3, 14, 15}, opt.Unwrap())
+	})
+
+	t.Run("roundtrip_0", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.SomeBytes([]byte{3, 14, 15}))
+		require.NoError(t, err)
+
+		var opt option.Bytes
+		require.NoError(t, json.Unmarshal(data, &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, []byte{3, 14, 15}, opt.Unwrap())
+	})
+
+	t.Run("some_zero", func(t *testing.T) {
+		t.Parallel()
+
+		var opt option.Bytes
+		require.NoError(t, json.Unmarshal([]byte(`""`), &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, []byte{}, opt.Unwrap())
+	})
+
+	t.Run("some_nil", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.SomeBytes(nil))
+		require.NoError(t, err)
+
+		opt := option.SomeBytes([]byte{3, 14, 15})
+		require.NoError(t, json.Unmarshal(data, &opt))
+		assert.False(t, opt.IsSome())
+	})
+
+	t.Run("none", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.SomeBytes([]byte{3, 14, 15})
+		require.NoError(t, json.Unmarshal([]byte("null"), &opt))
+		assert.False(t, opt.IsSome())
+		assert.Zero(t, opt.Unwrap())
+	})
+
+	t.Run("none_with_spaces", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.SomeBytes([]byte{3, 14, 15})
+		require.NoError(t, opt.UnmarshalJSON([]byte(" null\n")))
+		assert.False(t, opt.IsSome())
+	})
+
+	t.Run("struct_field", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Some   option.Bytes `json:"some"`
+			None   option.Bytes `json:"none"`
+			Absent option.Bytes `json:"absent"`
+		}
+
+		var out wrapper
+		err := json.Unmarshal([]byte(`{"some":"Aw4P","none":null}`), &out)
+		require.NoError(t, err)
+		require.True(t, out.Some.IsSome())
+		assert.EqualValues(t, []byte{3, 14, 15}, out.Some.Unwrap())
+		assert.False(t, out.None.IsSome())
+		assert.False(t, out.Absent.IsSome())
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.SomeBytes([]byte{3, 14, 15})
+		err := opt.UnmarshalJSON([]byte("{"))
+
+		var syntaxErr *json.SyntaxError
+		require.ErrorAs(t, err, &syntaxErr)
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, []byte{3, 14, 15}, opt.Unwrap())
+	})
+}
+
+func TestBytes_MarshalYAML(t *testing.T) {
+	t.Parallel()
+
+	t.Run("some", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.SomeBytes([]byte{3, 14, 15}))
+		require.NoError(t, err)
+		assert.Equal(t, "- 3\n- 14\n- 15\n", string(data))
+	})
+
+	t.Run("some_as_inner_0", func(t *testing.T) {
+		t.Parallel()
+
+		expected, err := yaml.Marshal([]byte([]byte{3, 14, 15}))
+		require.NoError(t, err)
+
+		data, err := yaml.Marshal(option.SomeBytes([]byte{3, 14, 15}))
+		require.NoError(t, err)
+		assert.Equal(t, string(expected), string(data))
+	})
+
+	t.Run("some_zero", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.SomeBytes([]byte{}))
+		require.NoError(t, err)
+		assert.Equal(t, "[]\n", string(data))
+	})
+
+	t.Run("none", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.NoneBytes())
+		require.NoError(t, err)
+		assert.Equal(t, "null\n", string(data))
+	})
+
+	t.Run("struct_field", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Some    option.Bytes `yaml:"some"`
+			None    option.Bytes `yaml:"none"`
+			Omitted option.Bytes `yaml:"omitted,omitempty"`
+			Zero    option.Bytes `yaml:"zero,omitempty"`
+		}
+
+		data, err := yaml.Marshal(wrapper{
+			Some:    option.SomeBytes([]byte{3, 14, 15}),
+			None:    option.NoneBytes(),
+			Omitted: option.NoneBytes(),
+			Zero:    option.SomeBytes([]byte{}),
+		})
+		require.NoError(t, err)
+
+		var fields map[string]any
+		require.NoError(t, yaml.Unmarshal(data, &fields))
+		assert.Contains(t, fields, "some")
+		assert.NotNil(t, fields["some"])
+		assert.Contains(t, fields, "none")
+		assert.Nil(t, fields["none"])
+		assert.NotContains(t, fields, "omitted")
+		assert.Contains(t, fields, "zero")
+		assert.NotNil(t, fields["zero"])
+	})
+}
+
+func TestBytes_UnmarshalYAML(t *testing.T) {
+	t.Parallel()
+
+	t.Run("roundtrip_0", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.SomeBytes([]byte{3, 14, 15}))
+		require.NoError(t, err)
+
+		var opt option.Bytes
+		require.NoError(t, yaml.Unmarshal(data, &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, []byte{3, 14, 15}, opt.Unwrap())
+	})
+
+	t.Run("some_zero", func(t *testing.T) {
+		t.Parallel()
+
+		var opt option.Bytes
+		require.NoError(t, yaml.Unmarshal([]byte("[]\n"), &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, []byte{}, opt.Unwrap())
+	})
+
+	t.Run("none_roundtrip", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.NoneBytes())
+		require.NoError(t, err)
+
+		var opt option.Bytes
+		require.NoError(t, yaml.Unmarshal(data, &opt))
+		assert.False(t, opt.IsSome())
+	})
+
+	t.Run("null_node_keeps_present_value", func(t *testing.T) {
+		t.Parallel()
+
+		// gopkg.in/yaml.v3 does not call UnmarshalYAML for a null node.
+		opt := option.SomeBytes([]byte{3, 14, 15})
+		require.NoError(t, yaml.Unmarshal([]byte("null"), &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, []byte{3, 14, 15}, opt.Unwrap())
+	})
+
+	t.Run("null_by_direct_call", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.SomeBytes([]byte{3, 14, 15})
+		err := opt.UnmarshalYAML(func(v any) error {
+			return yaml.Unmarshal([]byte("null"), v)
+		})
+		require.NoError(t, err)
+		assert.False(t, opt.IsSome())
+		assert.Zero(t, opt.Unwrap())
+	})
+
+	t.Run("struct_field", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Some   option.Bytes `yaml:"some"`
+			Null   option.Bytes `yaml:"nulled"`
+			Tilde  option.Bytes `yaml:"tilde"`
+			Empty  option.Bytes `yaml:"empty"`
+			Absent option.Bytes `yaml:"absent"`
+		}
+
+		some, err := yaml.Marshal(map[string]any{"some": option.SomeBytes([]byte{3, 14, 15})})
+		require.NoError(t, err)
+
+		var out wrapper
+		require.NoError(t, yaml.Unmarshal(append(some, []byte("nulled: null\ntilde: ~\nempty:\n")...), &out))
+		require.True(t, out.Some.IsSome())
+		assert.EqualValues(t, []byte{3, 14, 15}, out.Some.Unwrap())
+		assert.False(t, out.Null.IsSome())
+		assert.False(t, out.Tilde.IsSome())
+		assert.False(t, out.Empty.IsSome())
+		assert.False(t, out.Absent.IsSome())
+	})
+
+	t.Run("error", func(t *testing.T) {
+		t.Parallel()
+
+		errUnmarshal := errors.New("unmarshal failed")
+
+		opt := option.SomeBytes([]byte{3, 14, 15})
+		err := opt.UnmarshalYAML(func(any) error {
+			return errUnmarshal
+		})
+		require.ErrorIs(t, err, errUnmarshal)
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, []byte{3, 14, 15}, opt.Unwrap())
+	})
+}
+
+func ExampleBytes_MarshalJSON() {
+	for _, opt := range []option.Bytes{option.SomeBytes([]byte{3, 14, 15}), option.NoneBytes()} {
+		data, err := json.Marshal(opt)
+		if err != nil {
+			fmt.Println("error:", err)
+
+			return
+		}
+
+		fmt.Println(string(data))
+	}
+	// Output:
+	// "Aw4P"
+	// null
 }
 
 func ExampleSomeBytes() {
