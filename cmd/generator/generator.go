@@ -2,12 +2,14 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"flag"
 	"fmt"
 	"go/format"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"text/template"
 
 	"golang.org/x/text/cases"
@@ -36,6 +38,22 @@ type generatorDef struct {
 	UnexpectedTestingValue       string
 	UnexpectedTestingValueOutput string
 	ZeroTestingValueOutput       string
+
+	// JSONTestingValueOutput is the JSON encoding of TestingValues[0].
+	JSONTestingValueOutput string
+	// JSONZeroValue is an empty value of Type whose JSON and YAML encodings
+	// are not null.
+	JSONZeroValue string
+	// JSONZeroValueOutput is the JSON encoding of JSONZeroValue.
+	JSONZeroValueOutput string
+	// JSONNullable is true when nil is a valid value of Type, so a present
+	// value may still encode as JSON null.
+	JSONNullable bool
+
+	// YAMLTestingValueOutput is the YAML encoding of TestingValues[0].
+	YAMLTestingValueOutput string
+	// YAMLZeroValueOutput is the YAML encoding of JSONZeroValue.
+	YAMLZeroValueOutput string
 }
 
 func structToMap(def generatorDef) map[string]any {
@@ -58,6 +76,14 @@ func structToMap(def generatorDef) map[string]any {
 		"UnexpectedTestingValueOutput": def.UnexpectedTestingValueOutput,
 		"ZeroTestingValueOutput":       def.ZeroTestingValueOutput,
 		"ExampleValueOutput":           def.ExampleValueOutputs[0],
+
+		"JSONTestingValueOutput": def.JSONTestingValueOutput,
+		"JSONZeroValue":          def.JSONZeroValue,
+		"JSONZeroValueOutput":    def.JSONZeroValueOutput,
+		"JSONNullable":           def.JSONNullable,
+
+		"YAMLTestingValueOutput": def.YAMLTestingValueOutput,
+		"YAMLZeroValueOutput":    def.YAMLZeroValueOutput,
 
 		// Adding arrays for EncodeDecodeMsgpack tests.
 		"TestingValues":       def.TestingValues,
@@ -95,6 +121,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "13",
 		UnexpectedTestingValueOutput: "13",
 		ZeroTestingValueOutput:       zeroOutput[byte](),
+
+		JSONTestingValueOutput: "12",
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "12\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 	{
 		Name:        "int",
@@ -109,6 +143,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "13",
 		UnexpectedTestingValueOutput: "13",
 		ZeroTestingValueOutput:       zeroOutput[int](),
+
+		JSONTestingValueOutput: "12",
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "12\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 	{
 		Name:        "int8",
@@ -123,6 +165,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "13",
 		UnexpectedTestingValueOutput: "13",
 		ZeroTestingValueOutput:       zeroOutput[int8](),
+
+		JSONTestingValueOutput: "12",
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "12\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 	{
 		Name:        "int16",
@@ -137,6 +187,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "13",
 		UnexpectedTestingValueOutput: "13",
 		ZeroTestingValueOutput:       zeroOutput[int16](),
+
+		JSONTestingValueOutput: "12",
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "12\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 	{
 		Name:        "int32",
@@ -151,6 +209,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "13",
 		UnexpectedTestingValueOutput: "13",
 		ZeroTestingValueOutput:       zeroOutput[int32](),
+
+		JSONTestingValueOutput: "12",
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "12\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 	{
 		Name:        "int64",
@@ -165,6 +231,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "13",
 		UnexpectedTestingValueOutput: "13",
 		ZeroTestingValueOutput:       zeroOutput[int64](),
+
+		JSONTestingValueOutput: "12",
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "12\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 	{
 		Name:        "uint",
@@ -179,6 +253,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "13",
 		UnexpectedTestingValueOutput: "13",
 		ZeroTestingValueOutput:       zeroOutput[uint](),
+
+		JSONTestingValueOutput: "12",
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "12\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 	{
 		Name:        "uint8",
@@ -193,6 +275,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "13",
 		UnexpectedTestingValueOutput: "13",
 		ZeroTestingValueOutput:       zeroOutput[uint8](),
+
+		JSONTestingValueOutput: "12",
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "12\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 	{
 		Name:        "uint16",
@@ -207,6 +297,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "13",
 		UnexpectedTestingValueOutput: "13",
 		ZeroTestingValueOutput:       zeroOutput[uint16](),
+
+		JSONTestingValueOutput: "12",
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "12\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 	{
 		Name:        "uint32",
@@ -221,6 +319,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "13",
 		UnexpectedTestingValueOutput: "13",
 		ZeroTestingValueOutput:       zeroOutput[uint32](),
+
+		JSONTestingValueOutput: "12",
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "12\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 	{
 		Name:        "uint64",
@@ -235,6 +341,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "13",
 		UnexpectedTestingValueOutput: "13",
 		ZeroTestingValueOutput:       zeroOutput[uint64](),
+
+		JSONTestingValueOutput: "12",
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "12\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 	{
 		Name:        "float32",
@@ -249,6 +363,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "13",
 		UnexpectedTestingValueOutput: "13",
 		ZeroTestingValueOutput:       zeroOutput[float32](),
+
+		JSONTestingValueOutput: "12",
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "12\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 	{
 		Name:        "float64",
@@ -263,6 +385,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "13",
 		UnexpectedTestingValueOutput: "13",
 		ZeroTestingValueOutput:       zeroOutput[float64](),
+
+		JSONTestingValueOutput: "12",
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "12\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 	{
 		Name:        "string",
@@ -277,6 +407,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "\"bye\"",
 		UnexpectedTestingValueOutput: "bye",
 		ZeroTestingValueOutput:       zeroOutput[string](),
+
+		JSONTestingValueOutput: `"hello"`,
+		JSONZeroValue:          `""`,
+		JSONZeroValueOutput:    `""`,
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "hello\n",
+		YAMLZeroValueOutput:    "\"\"\n",
 	},
 	{
 		Name:        "bytes",
@@ -291,6 +429,15 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "[]byte{3, 14, 15, 9, 26}",
 		UnexpectedTestingValueOutput: "[3 14 15 9 26]",
 		ZeroTestingValueOutput:       zeroOutput[[]byte](),
+
+		JSONTestingValueOutput: `"Aw4P"`, // Base64 of {3, 14, 15}.
+		JSONZeroValue:          "[]byte{}",
+		JSONZeroValueOutput:    `""`,
+		JSONNullable:           true,
+
+		// YAML encodes a byte slice as a sequence of numbers, and a nil one as [].
+		YAMLTestingValueOutput: "- 3\n- 14\n- 15\n",
+		YAMLZeroValueOutput:    "[]\n",
 	},
 	{
 		Name:        "bool",
@@ -305,6 +452,14 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "false",
 		UnexpectedTestingValueOutput: "false",
 		ZeroTestingValueOutput:       zeroOutput[bool](),
+
+		JSONTestingValueOutput: "true",
+		JSONZeroValue:          "false",
+		JSONZeroValueOutput:    "false",
+		JSONNullable:           false,
+
+		YAMLTestingValueOutput: "true\n",
+		YAMLZeroValueOutput:    "false\n",
 	},
 	{
 		Name:        "any",
@@ -319,6 +474,16 @@ var defaultTypes = []generatorDef{
 		UnexpectedTestingValue:       "\"bye\"",
 		UnexpectedTestingValueOutput: "bye",
 		ZeroTestingValueOutput:       zeroOutput[any](),
+
+		// The zero value of any is nil, which encodes as null (see JSONNullable),
+		// so zero of a concrete type stands in for "empty but present".
+		JSONTestingValueOutput: `"hello"`,
+		JSONZeroValue:          "0",
+		JSONZeroValueOutput:    "0",
+		JSONNullable:           true,
+
+		YAMLTestingValueOutput: "hello\n",
+		YAMLZeroValueOutput:    "0\n",
 	},
 }
 
@@ -331,6 +496,9 @@ import (
 	{{ range $i, $import := .imports }}
 	"{{ $import }}"
 	{{ end }}
+
+	"bytes"
+	"encoding/json"
 
 	"github.com/vmihailenco/msgpack/v5"
 	"github.com/vmihailenco/msgpack/v5/msgpcode"
@@ -485,6 +653,99 @@ func (o *{{.Name}}) DecodeMsgpack(decoder *msgpack.Decoder) error {
 	default:
 		return newDecodeWithCodeError("{{.Name}}", code)
 	}
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+//   - If the value is present, it is encoded exactly as json.Marshal encodes
+//     the {{.Type}} value itself.
+//   - If the value is absent (None), it is encoded as JSON null.
+{{- if .JSONNullable }}
+//
+// A present nil {{.Type}} is encoded as JSON null too, so it decodes back
+// as an absent value.
+{{- end }}
+//
+// A struct field of type {{.Name}} with the "omitzero" JSON tag option is
+// omitted when the value is absent, since IsZero reports absence.
+// The "omitempty" option has no effect on it.
+func (o {{.Name}}) MarshalJSON() ([]byte, error) {
+	if !o.exists {
+		return []byte("null"), nil
+	}
+
+	return json.Marshal(&o.value)
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+//   - JSON null is decoded as no value (None{{.Name}}).
+//   - Any other JSON value is decoded as {{.Type}} and stored as a present value.
+//
+// An error of decoding {{.Type}} is returned unchanged, and the receiver
+// is left intact.
+func (o *{{.Name}}) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(bytes.TrimSpace(data), []byte("null")) {
+		*o = None{{.Name}}()
+
+		return nil
+	}
+
+	var value {{.Type}}
+
+	err := json.Unmarshal(data, &value)
+	if err != nil {
+		return err
+	}
+
+	*o = Some{{.Name}}(value)
+
+	return nil
+}
+
+// MarshalYAML implements the Marshaler interface of gopkg.in/yaml.v3
+// (and yaml.v2) without depending on it.
+//   - If the value is present, it returns a pointer to it, so the value is
+//     encoded exactly as the YAML encoder encodes {{.Type}} itself.
+//   - If the value is absent (None), it returns nil, which is encoded as null.
+//
+// A struct field of type {{.Name}} with the "omitempty" YAML tag option is
+// omitted when the value is absent, since the encoder consults IsZero.
+func (o {{.Name}}) MarshalYAML() (any, error) {
+	if !o.exists {
+		return nil, nil
+	}
+
+	return &o.value, nil
+}
+
+// UnmarshalYAML implements the obsolete Unmarshaler interface of
+// gopkg.in/yaml.v3 (the only one of yaml.v2) without depending on it.
+//   - A null value is decoded as no value (None{{.Name}}).
+//   - Any other value is decoded as {{.Type}} and stored as a present value.
+//
+// gopkg.in/yaml.v3 never calls this method for a null node (null, ~ or an
+// empty value): it leaves the receiver unchanged. Decoding null into a zero
+// {{.Name}} therefore yields None, but decoding it into a present value
+// keeps that value.
+//
+// An error of decoding {{.Type}} is returned unchanged, and the receiver
+// is left intact.
+func (o *{{.Name}}) UnmarshalYAML(unmarshal func(any) error) error {
+	var value *{{.Type}}
+
+	err := unmarshal(&value)
+	if err != nil {
+		return err
+	}
+
+	if value == nil {
+		*o = None{{.Name}}()
+
+		return nil
+	}
+
+	*o = Some{{.Name}}(*value)
+
+	return nil
 }`
 
 var tplTestText = `
@@ -498,12 +759,15 @@ import (
 	{{ end }}
 
 	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/vmihailenco/msgpack/v5"
+	"gopkg.in/yaml.v3"
 
 	"github.com/tarantool/go-option"
 )
@@ -714,6 +978,373 @@ func Test{{.Name}}_EncodeDecodeMsgpack(t *testing.T) {
 	})
 }
 
+func Test{{.Name}}_MarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("some", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.Some{{.Name}}({{.TestingValue}}))
+		require.NoError(t, err)
+		assert.Equal(t, {{ raw .JSONTestingValueOutput }}, string(data))
+	})
+
+	{{ range $i, $value := .TestingValues }}
+	t.Run("some_as_inner_{{ $i }}", func(t *testing.T) {
+		t.Parallel()
+
+		expected, err := json.Marshal({{$.Type}}({{ $value }}))
+		require.NoError(t, err)
+
+		data, err := json.Marshal(option.Some{{$.Name}}({{ $value }}))
+		require.NoError(t, err)
+		assert.Equal(t, string(expected), string(data))
+	})
+	{{ end }}
+
+	t.Run("some_zero", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.Some{{.Name}}({{.JSONZeroValue}}))
+		require.NoError(t, err)
+		assert.Equal(t, {{ raw .JSONZeroValueOutput }}, string(data))
+	})
+
+	{{- if .JSONNullable }}
+
+	t.Run("some_nil", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.Some{{.Name}}(nil))
+		require.NoError(t, err)
+		assert.Equal(t, "null", string(data))
+	})
+	{{- end }}
+
+	t.Run("none", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.None{{.Name}}())
+		require.NoError(t, err)
+		assert.Equal(t, "null", string(data))
+	})
+
+	t.Run("struct_field", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Some option.{{.Name}} {{ raw "json:\"some\"" }}
+			None option.{{.Name}} {{ raw "json:\"none\"" }}
+		}
+
+		data, err := json.Marshal(wrapper{
+			Some: option.Some{{.Name}}({{.TestingValue}}),
+			None: option.None{{.Name}}(),
+		})
+		require.NoError(t, err)
+		assert.Equal(t, {{ raw (printf "{\"some\":%s,\"none\":null}" .JSONTestingValueOutput) }}, string(data))
+	})
+
+	t.Run("omitzero", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Value option.{{.Name}} {{ raw "json:\"value,omitzero\"" }}
+		}
+
+		data, err := json.Marshal(wrapper{Value: option.None{{.Name}}()})
+		require.NoError(t, err)
+		assert.Equal(t, "{}", string(data))
+
+		data, err = json.Marshal(wrapper{Value: option.Some{{.Name}}({{.JSONZeroValue}})})
+		require.NoError(t, err)
+		assert.Equal(t, {{ raw (printf "{\"value\":%s}" .JSONZeroValueOutput) }}, string(data))
+	})
+}
+
+func Test{{.Name}}_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	t.Run("some", func(t *testing.T) {
+		t.Parallel()
+
+		var opt option.{{.Name}}
+		require.NoError(t, json.Unmarshal([]byte({{ raw .JSONTestingValueOutput }}), &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, {{ index .TestingValueOutputs 0 }}, opt.Unwrap())
+	})
+
+	{{ range $i, $value := .TestingValues }}
+	t.Run("roundtrip_{{ $i }}", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.Some{{$.Name}}({{ $value }}))
+		require.NoError(t, err)
+
+		var opt option.{{$.Name}}
+		require.NoError(t, json.Unmarshal(data, &opt))
+		require.True(t, opt.IsSome())
+		{{- $output := index $.TestingValueOutputs $i }}
+		assert.EqualValues(t, {{ $output }}, opt.Unwrap())
+	})
+	{{ end }}
+
+	t.Run("some_zero", func(t *testing.T) {
+		t.Parallel()
+
+		var opt option.{{.Name}}
+		require.NoError(t, json.Unmarshal([]byte({{ raw .JSONZeroValueOutput }}), &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, {{.JSONZeroValue}}, opt.Unwrap())
+	})
+
+	{{- if .JSONNullable }}
+
+	t.Run("some_nil", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := json.Marshal(option.Some{{.Name}}(nil))
+		require.NoError(t, err)
+
+		opt := option.Some{{.Name}}({{.TestingValue}})
+		require.NoError(t, json.Unmarshal(data, &opt))
+		assert.False(t, opt.IsSome())
+	})
+	{{- end }}
+
+	t.Run("none", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.Some{{.Name}}({{.TestingValue}})
+		require.NoError(t, json.Unmarshal([]byte("null"), &opt))
+		assert.False(t, opt.IsSome())
+		assert.Zero(t, opt.Unwrap())
+	})
+
+	t.Run("none_with_spaces", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.Some{{.Name}}({{.TestingValue}})
+		require.NoError(t, opt.UnmarshalJSON([]byte(" null\n")))
+		assert.False(t, opt.IsSome())
+	})
+
+	t.Run("struct_field", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Some   option.{{.Name}} {{ raw "json:\"some\"" }}
+			None   option.{{.Name}} {{ raw "json:\"none\"" }}
+			Absent option.{{.Name}} {{ raw "json:\"absent\"" }}
+		}
+
+		var out wrapper
+		err := json.Unmarshal([]byte({{ raw (printf "{\"some\":%s,\"none\":null}" .JSONTestingValueOutput) }}), &out)
+		require.NoError(t, err)
+		require.True(t, out.Some.IsSome())
+		assert.EqualValues(t, {{ index .TestingValueOutputs 0 }}, out.Some.Unwrap())
+		assert.False(t, out.None.IsSome())
+		assert.False(t, out.Absent.IsSome())
+	})
+
+	t.Run("invalid", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.Some{{.Name}}({{.TestingValue}})
+		err := opt.UnmarshalJSON([]byte("{"))
+
+		var syntaxErr *json.SyntaxError
+		require.ErrorAs(t, err, &syntaxErr)
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, {{ index .TestingValueOutputs 0 }}, opt.Unwrap())
+	})
+}
+
+func Test{{.Name}}_MarshalYAML(t *testing.T) {
+	t.Parallel()
+
+	t.Run("some", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.Some{{.Name}}({{.TestingValue}}))
+		require.NoError(t, err)
+		assert.Equal(t, {{ printf "%q" .YAMLTestingValueOutput }}, string(data))
+	})
+
+	{{ range $i, $value := .TestingValues }}
+	t.Run("some_as_inner_{{ $i }}", func(t *testing.T) {
+		t.Parallel()
+
+		expected, err := yaml.Marshal({{$.Type}}({{ $value }}))
+		require.NoError(t, err)
+
+		data, err := yaml.Marshal(option.Some{{$.Name}}({{ $value }}))
+		require.NoError(t, err)
+		assert.Equal(t, string(expected), string(data))
+	})
+	{{ end }}
+
+	t.Run("some_zero", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.Some{{.Name}}({{.JSONZeroValue}}))
+		require.NoError(t, err)
+		assert.Equal(t, {{ printf "%q" .YAMLZeroValueOutput }}, string(data))
+	})
+
+	t.Run("none", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.None{{.Name}}())
+		require.NoError(t, err)
+		assert.Equal(t, "null\n", string(data))
+	})
+
+	t.Run("struct_field", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Some    option.{{.Name}} {{ raw "yaml:\"some\"" }}
+			None    option.{{.Name}} {{ raw "yaml:\"none\"" }}
+			Omitted option.{{.Name}} {{ raw "yaml:\"omitted,omitempty\"" }}
+			Zero    option.{{.Name}} {{ raw "yaml:\"zero,omitempty\"" }}
+		}
+
+		data, err := yaml.Marshal(wrapper{
+			Some:    option.Some{{.Name}}({{.TestingValue}}),
+			None:    option.None{{.Name}}(),
+			Omitted: option.None{{.Name}}(),
+			Zero:    option.Some{{.Name}}({{.JSONZeroValue}}),
+		})
+		require.NoError(t, err)
+
+		var fields map[string]any
+		require.NoError(t, yaml.Unmarshal(data, &fields))
+		assert.Contains(t, fields, "some")
+		assert.NotNil(t, fields["some"])
+		assert.Contains(t, fields, "none")
+		assert.Nil(t, fields["none"])
+		assert.NotContains(t, fields, "omitted")
+		assert.Contains(t, fields, "zero")
+		assert.NotNil(t, fields["zero"])
+	})
+}
+
+func Test{{.Name}}_UnmarshalYAML(t *testing.T) {
+	t.Parallel()
+
+	{{ range $i, $value := .TestingValues }}
+	t.Run("roundtrip_{{ $i }}", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.Some{{$.Name}}({{ $value }}))
+		require.NoError(t, err)
+
+		var opt option.{{$.Name}}
+		require.NoError(t, yaml.Unmarshal(data, &opt))
+		require.True(t, opt.IsSome())
+		{{- $output := index $.TestingValueOutputs $i }}
+		assert.EqualValues(t, {{ $output }}, opt.Unwrap())
+	})
+	{{ end }}
+
+	t.Run("some_zero", func(t *testing.T) {
+		t.Parallel()
+
+		var opt option.{{.Name}}
+		require.NoError(t, yaml.Unmarshal([]byte({{ printf "%q" .YAMLZeroValueOutput }}), &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, {{.JSONZeroValue}}, opt.Unwrap())
+	})
+
+	t.Run("none_roundtrip", func(t *testing.T) {
+		t.Parallel()
+
+		data, err := yaml.Marshal(option.None{{.Name}}())
+		require.NoError(t, err)
+
+		var opt option.{{.Name}}
+		require.NoError(t, yaml.Unmarshal(data, &opt))
+		assert.False(t, opt.IsSome())
+	})
+
+	t.Run("null_node_keeps_present_value", func(t *testing.T) {
+		t.Parallel()
+
+		// gopkg.in/yaml.v3 does not call UnmarshalYAML for a null node.
+		opt := option.Some{{.Name}}({{.TestingValue}})
+		require.NoError(t, yaml.Unmarshal([]byte("null"), &opt))
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, {{ index .TestingValueOutputs 0 }}, opt.Unwrap())
+	})
+
+	t.Run("null_by_direct_call", func(t *testing.T) {
+		t.Parallel()
+
+		opt := option.Some{{.Name}}({{.TestingValue}})
+		err := opt.UnmarshalYAML(func(v any) error {
+			return yaml.Unmarshal([]byte("null"), v)
+		})
+		require.NoError(t, err)
+		assert.False(t, opt.IsSome())
+		assert.Zero(t, opt.Unwrap())
+	})
+
+	t.Run("struct_field", func(t *testing.T) {
+		t.Parallel()
+
+		type wrapper struct {
+			Some   option.{{.Name}} {{ raw "yaml:\"some\"" }}
+			Null   option.{{.Name}} {{ raw "yaml:\"nulled\"" }}
+			Tilde  option.{{.Name}} {{ raw "yaml:\"tilde\"" }}
+			Empty  option.{{.Name}} {{ raw "yaml:\"empty\"" }}
+			Absent option.{{.Name}} {{ raw "yaml:\"absent\"" }}
+		}
+
+		some, err := yaml.Marshal(map[string]any{"some": option.Some{{.Name}}({{.TestingValue}})})
+		require.NoError(t, err)
+
+		var out wrapper
+		require.NoError(t, yaml.Unmarshal(append(some, []byte("nulled: null\ntilde: ~\nempty:\n")...), &out))
+		require.True(t, out.Some.IsSome())
+		assert.EqualValues(t, {{ index .TestingValueOutputs 0 }}, out.Some.Unwrap())
+		assert.False(t, out.Null.IsSome())
+		assert.False(t, out.Tilde.IsSome())
+		assert.False(t, out.Empty.IsSome())
+		assert.False(t, out.Absent.IsSome())
+	})
+
+	t.Run("error", func(t *testing.T) {
+		t.Parallel()
+
+		errUnmarshal := errors.New("unmarshal failed")
+
+		opt := option.Some{{.Name}}({{.TestingValue}})
+		err := opt.UnmarshalYAML(func(any) error {
+			return errUnmarshal
+		})
+		require.ErrorIs(t, err, errUnmarshal)
+		require.True(t, opt.IsSome())
+		assert.EqualValues(t, {{ index .TestingValueOutputs 0 }}, opt.Unwrap())
+	})
+}
+
+func Example{{.Name}}_MarshalJSON() {
+	for _, opt := range []option.{{.Name}}{option.Some{{.Name}}({{.TestingValue}}), option.None{{.Name}}()} {
+		data, err := json.Marshal(opt)
+		if err != nil {
+			fmt.Println("error:", err)
+
+			return
+		}
+
+		fmt.Println(string(data))
+	}
+	// Output:
+	// {{.JSONTestingValueOutput}}
+	// null
+}
+
 func ExampleSome{{.Name}}() {
 	opt := option.Some{{.Name}}({{.TestingValue}})
 	if opt.IsSome() {
@@ -826,6 +1457,23 @@ func Example{{.Name}}_UnwrapOrElse() {
 }
 `
 
+var errBacktickInRawString = errors.New("raw string literal cannot contain a backtick")
+
+// rawString renders s as a Go raw string literal. The templates are Go raw
+// strings themselves, so they cannot spell a backtick (struct tags, JSON
+// literals) directly.
+func rawString(s string) (string, error) {
+	if strings.Contains(s, "`") {
+		return "", fmt.Errorf("%w: %q", errBacktickInRawString, s)
+	}
+
+	return "`" + s + "`", nil
+}
+
+var templateFuncs = template.FuncMap{
+	"raw": rawString,
+}
+
 func printFile(prefix string, data []byte) {
 	for lineNo, line := range bytes.Split(data, []byte("\n")) {
 		fmt.Printf("%03d%s%s\n", lineNo, prefix, string(line))
@@ -838,7 +1486,7 @@ func generateAndWrite() error {
 		return fmt.Errorf("failed to parse template: %w", err)
 	}
 
-	tmpl_test, err := template.New("internal_test").Parse(tplTestText)
+	tmpl_test, err := template.New("internal_test").Funcs(templateFuncs).Parse(tplTestText)
 	if err != nil {
 		return fmt.Errorf("failed to parse testing template: %w", err)
 	}
