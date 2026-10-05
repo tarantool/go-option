@@ -10,14 +10,20 @@ Versioning](http://semver.org/spec/v2.0.0.html) except to the first release.
 
 ### Added
 
-- JSON and YAML marshalling for all optional types: builtin,
-  `option.Generic[T]` and the ones produced by `gentypes`. An absent value
-  is encoded as `null`, a present one as the encoding of the wrapped value.
-  YAML support needs no YAML dependency.
-
 ### Changed
 
 ### Fixed
+
+## [v1.2.0] - 2026-10-05
+
+The release adds JSON and YAML marshalling for optional types.
+
+### Added
+
+- JSON and YAML marshalling for all optional types: builtin,
+  `option.Generic[T]` and the ones produced by `gentypes`. An absent value
+  is encoded as `null`, a present one as the encoding of the wrapped value.
+  YAML support needs no YAML dependency (#17).
 
 ## [v1.1.0] - 2025-12-02
 
